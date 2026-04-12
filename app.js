@@ -445,7 +445,7 @@ function renderProds(batch = null) {
     // Out of stock overlay — bottom strip, won't overlap top badge
     if (isOutOfStock) {
       const oos = document.createElement('div');
-      oos.className = 'p-oos-overlay';
+      oos.className = 'p-oos-overlay p-oos-strip';
       oos.textContent = 'Out of Stock';
       imgBox.appendChild(oos);
     }
@@ -462,6 +462,7 @@ function renderProds(batch = null) {
     // Actions overlay
     const acts = document.createElement('div');
     acts.className = 'p-acts';
+    if (isOutOfStock) acts.style.display = 'none';
 
     let cardQty = 1;
 
@@ -479,12 +480,19 @@ function renderProds(batch = null) {
     const addBtn = document.createElement('button');
     addBtn.className = 'p-add';
     addBtn.textContent = 'Add to Cart';
-    if (isOutOfStock) { addBtn.disabled = true; addBtn.style.background = '#bbb'; addBtn.style.cursor = 'not-allowed'; }
     addBtn.onclick = e => {
       e.stopPropagation();
-      if (isOutOfStock) return;
-      openProduct(p.id); // open product page so user selects size first
+      openProduct(p.id);
     };
+
+    // OOS wish button (outside acts, always visible)
+    const wishBtnOos = document.createElement('button');
+    wishBtnOos.className = `p-wish${isWished ? ' wished' : ''}`;
+    wishBtnOos.id = `wish-oos-${p.id}`;
+    wishBtnOos.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
+    wishBtnOos.style.cssText = 'position:absolute;top:.5rem;left:.5rem;z-index:4;width:28px;height:28px;background:white;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center';
+    wishBtnOos.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
+    if (isOutOfStock) imgBox.appendChild(wishBtnOos);
 
     const wishBtn = document.createElement('button');
     wishBtn.className = `p-wish${isWished ? ' wished' : ''}`;
@@ -2186,15 +2194,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!fcPriceMin || !fcPriceMax || !fcPriceFill) return;
     const min = parseInt(fcPriceMin.value);
     const max = parseInt(fcPriceMax.value);
-    fcPriceFill.style.left  = (min / 200 * 100) + '%';
-    fcPriceFill.style.width = ((max - min) / 200 * 100) + '%';
+    fcPriceFill.style.left  = (min / 50 * 100) + '%';
+    fcPriceFill.style.width = ((max - min) / 50 * 100) + '%';
   }
 
   window.updateFcPrice = function() {
     let min = parseInt(fcPriceMin.value);
     let max = parseInt(fcPriceMax.value);
     if (min > max) { fcPriceMin.value = max; min = max; }
-    fcPriceLabel.textContent = `$${min} — ${max >= 200 ? '$200+' : '$' + max}`;
+    fcPriceLabel.textContent = `$${min} — ${max >= 50 ? '$50+' : '$' + max}`;
     updateFcPriceFill();
     clearTimeout(fcPriceDebounce);
     fcPriceDebounce = setTimeout(() => runFilteredLoad(false), 500);
@@ -2206,8 +2214,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     Object.keys(fcState).forEach(k => fcState[k] = 'all');
     document.querySelectorAll('.fc').forEach(b => b.classList.toggle('active', b.dataset.val === 'all'));
     if (fcPriceMin) fcPriceMin.value = 0;
-    if (fcPriceMax) fcPriceMax.value = 200;
-    if (fcPriceLabel) fcPriceLabel.textContent = '$0 — $200+';
+    if (fcPriceMax) fcPriceMax.value = 50;
+    if (fcPriceLabel) fcPriceLabel.textContent = '$0 — $50+';
     updateFcPriceFill();
     runFilteredLoad(false);
   };
@@ -2245,9 +2253,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (fcState.gender === 'girl' || fcState.gender === 'boy') params.append('gender', 'unisex');
       }
       const minP = fcPriceMin ? parseInt(fcPriceMin.value) : 0;
-      const maxP = fcPriceMax ? parseInt(fcPriceMax.value) : 200;
-      if (minP > 0)   params.append('min_price', minP);
-      if (maxP < 200) params.append('max_price', maxP);
+      const maxP = fcPriceMax ? parseInt(fcPriceMax.value) : 50;
+      if (minP > 0)  params.append('min_price', minP);
+      if (maxP < 50) params.append('max_price', maxP);
 
       const res  = await fetch(`${API_URL}/api/products/?${params.toString()}`);
       const data = await res.json();
