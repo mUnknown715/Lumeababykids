@@ -133,11 +133,11 @@
     .p-card-size[data-size].active{background:var(--wine);color:white;border-color:var(--wine)}
     .p-card-size-more{border-color:var(--blush);color:var(--muted);background:var(--blush);cursor:default}
     .p-card-colors{display:flex;align-items:center;gap:.3rem}
-    .p-card-swatch{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.1);display:inline-block;flex-shrink:0;cursor:pointer;transition:transform .15s;outline:0 !important;-webkit-tap-highlight-color:rgba(0,0,0,0) !important;-webkit-appearance:none;appearance:none}
+    .p-card-swatch{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.1);display:inline-block;flex-shrink:0;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;outline:0 !important;-webkit-tap-highlight-color:rgba(0,0,0,0) !important;-webkit-appearance:none;appearance:none;transform:scale(1)}
     .p-card-swatch[data-color]:hover{transform:scale(1.2)}
-    .p-card-swatch[data-color].active{border:3px solid var(--wine);box-shadow:0 0 0 2px white inset}
+    .p-card-swatch[data-color].active{border:3px solid var(--wine);box-shadow:0 0 0 2px white inset;transform:scale(1)}
     .p-card-swatch:focus,.p-card-swatch:focus-visible,.p-card-swatch:focus-within,.p-card-swatch:active{outline:0 !important;box-shadow:none !important}
-    .p-card-swatch:not(.active){box-shadow:none !important;border-color:rgba(0,0,0,.1) !important}
+    .p-card-swatch:not(.active){box-shadow:none !important;border-color:rgba(0,0,0,.1) !important;transform:scale(1) !important}
     .p-card-swatch-more{font-size:.6rem;color:var(--muted);font-family:'DM Sans',sans-serif}
     .p-size{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
     .p-row{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem}
@@ -332,10 +332,14 @@
       /* ── MAMA AI ── */
       #mama-ai{padding:2.5rem 1rem}
       .mama-grid{grid-template-columns:1fr;gap:2rem}
-      .chat-win{border-radius:1rem}
-      .chat-msgs{max-height:240px}
+      .chat-win{border-radius:1rem;height:420px}
+      .chat-msgs{max-height:none;flex:1}
       .chat-suggs{flex-wrap:wrap;gap:.4rem}
       .chip{font-size:.68rem;padding:.3rem .7rem}
+      /* Bigger size/color on mobile */
+      .p-card-sizes{gap:.35rem;margin-bottom:.5rem}
+      .p-card-size{font-size:.68rem;padding:.22rem .6rem}
+      .p-card-colors .p-card-swatch{width:20px;height:20px}
 
       /* ── CONTACT ── */
       #contact-sec{padding:2.5rem 1rem!important}
