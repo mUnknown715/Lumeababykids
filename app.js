@@ -4,7 +4,6 @@
    ═══════════════════════════════════════════════ */
 
 const API_URL = 'https://bilgy-stomatological-ryleigh.ngrok-free.dev';
-// const API_URL='http://localhost:4000';
 
 /* Ensure uploaded images always get the full backend URL */
 function resolveImg(url) {
@@ -772,6 +771,9 @@ window.fetch = async (...args) => {
   // Add ngrok bypass header and credentials for cookies
   options.headers = { 'ngrok-skip-browser-warning': 'true', ...options.headers };
   options.credentials = options.credentials || 'include';
+  if (window._authToken && !options.headers['Authorization']) {
+    options.headers['Authorization'] = `Bearer ${window._authToken}`;
+  }
 
   let res;
   try {
@@ -804,11 +806,10 @@ function _forceSignOut(msg) {
 
 /* Validate token with server on every page load — catches deleted accounts instantly */
 async function validateSession() {
-  
-  
+  if (!currentUser) return; // skip if not logged in
   try {
     const res = await _origFetch(`${API_URL}/api/users/me`, {
-      headers: {  }
+      credentials: 'include'
     });
     if (res.status === 401 || res.status === 404) {
       _forceSignOut('Your account no longer exists. Please create a new one.');
@@ -901,6 +902,7 @@ function clearAuth() {
     sessionStorage.removeItem(k);
   });
   localStorage.removeItem('lumea_remember');
+  window._authToken = null;
 }
 
 async function loadWishlistFromDB() {
@@ -966,7 +968,8 @@ async function doSignIn() {
     const data = await res.json().catch(() => null);
     if (!res.ok)    { showToast(data?.detail || 'Login failed'); return; }
     if (!data?.data){ showToast('Invalid server response'); return; }
-    // Only store non-sensitive user info — token is in httpOnly cookie
+    // Store token in memory as fallback for cross-origin (dev/ngrok)
+    if (data.data.access_token) window._authToken = data.data.access_token;
     const storage = remember ? localStorage : sessionStorage;
     storage.setItem('lumea_user', JSON.stringify(data.data.user));
     localStorage.setItem('lumea_remember', remember ? '1' : '0');
@@ -1045,7 +1048,7 @@ async function doRegister() {
     const data = await res.json().catch(() => null);
     if (!res.ok) { showToast(data?.detail || 'Registration failed'); return; }
     if (!data?.data) { showToast('Invalid server response'); return; }
-    // Token is in httpOnly cookie — only store non-sensitive user info
+    if (data.data.access_token) window._authToken = data.data.access_token;
     localStorage.setItem('lumea_user', JSON.stringify(data.data.user));
     localStorage.setItem('lumea_remember', '1');
     currentUser = data.data.user;
@@ -2312,10 +2315,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('load-btn').addEventListener('click', () => runFilteredLoad(true));
 
-  // Init
-  await initAuth();
+  // Init — run auth and products in parallel, don't block products on auth
+  Promise.all([
+    initAuth(),
+    runFilteredLoad(false),
+  ]);
   validateSession();
-  runFilteredLoad(false);
   updateContactSection();
   renderAddrCards();
 });
