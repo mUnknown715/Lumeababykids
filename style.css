@@ -95,13 +95,14 @@
     .p-card{background:white;border-radius:1.2rem;overflow:hidden;box-shadow:0 2px 16px var(--shadow);transition:transform .3s,box-shadow .3s;cursor:pointer;position:relative}
     .p-card-oos{opacity:.75}
     .p-card-oos .p-img{filter:grayscale(30%)}
-    .p-oos-overlay{position:absolute;bottom:0;left:0;right:0;background:rgba(46,26,34,.65);color:white;text-align:center;font-family:'DM Sans',sans-serif;font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.35rem;z-index:3}
+    .p-oos-overlay{position:absolute;top:.5rem;right:.5rem;background:rgba(46,26,34,.78);color:white;font-family:'DM Sans',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .6rem;border-radius:3rem;z-index:4}
+    .p-oos-strip{top:auto;right:0;left:0;bottom:0;border-radius:0;padding:.4rem;text-align:center;font-size:.6rem}
     .p-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(139,51,82,.15)}
     .p-card:hover .p-acts{opacity:1;transform:translateY(0)}
     .p-card:hover .p-img{transform:scale(1.07)}
-    .p-img-box{overflow:hidden;aspect-ratio:3/3.8;position:relative}
+    .p-img-box{overflow:hidden;aspect-ratio:3/3.5;position:relative}
     .p-img{width:100%;height:100%;display:block;transition:transform .5s ease;object-fit:cover}
-    .p-acts{position:absolute;bottom:0;left:0;right:0;padding:.6rem .9rem;display:flex;gap:.5rem;align-items:center;opacity:0;transform:translateY(8px);transition:all .25s;background:linear-gradient(to top,rgba(46,26,34,.7) 0%,transparent 100%)}
+    .p-acts{position:absolute;bottom:0;left:0;right:0;padding:.55rem .7rem;padding-top:1.4rem;display:flex;gap:.4rem;align-items:center;opacity:0;transform:translateY(8px);transition:all .25s;background:linear-gradient(to top,rgba(46,26,34,.78) 0%,transparent 100%)}
     @media(hover:none){.p-acts{opacity:1;transform:translateY(0)}}
     .p-card-qty{display:flex;align-items:center;gap:.35rem;flex-shrink:0}
     .p-qty-btn{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(255,255,255,.7);background:rgba(255,255,255,.15);color:white;font-size:.85rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
@@ -208,9 +209,12 @@
 
     @media(max-width:1024px) and (min-width:641px){
       /* ── NAV ── */
-      nav{padding:1rem 1.5rem}
-      .nav-links{gap:1.2rem}
-      .nav-links a{font-size:.65rem}
+      nav{padding:.8rem 1.5rem}
+      .nav-links{gap:.8rem}
+      .nav-links a{font-size:.6rem;letter-spacing:.1em}
+      .nav-actions{gap:.6rem}
+      .cart-btn{padding:.4rem .8rem;font-size:.65rem}
+      .nav-logo img{height:44px!important}
 
       /* ── HERO ── */
       #home{grid-template-columns:1fr;min-height:auto;padding-top:76px}
@@ -297,18 +301,22 @@
       .sec-h{font-size:1.6rem;word-break:break-word}
 
       /* ── PRODUCT GRID ── */
-      .prod-grid{grid-template-columns:repeat(2,1fr);gap:.8rem}
+      .prod-grid{grid-template-columns:repeat(2,1fr);gap:.7rem}
       .p-name{font-size:.78rem;margin-bottom:.3rem}
       .p-price{font-size:.85rem}
       .p-old{font-size:.72rem}
-      .p-info{padding:.7rem .8rem 1rem}
-      .p-card-sizes{gap:.25rem;margin-bottom:.4rem}
-      .p-card-size{font-size:.55rem;padding:.14rem .35rem}
-      .p-card-swatch{width:12px;height:12px}
-      .p-acts{opacity:1;transform:translateY(0)}
-      .p-add{font-size:.6rem;padding:.5rem}
-      .p-oos-overlay{font-size:.55rem;padding:.3rem}
-      .p-badge{font-size:.55rem;padding:.2rem .5rem}
+      .p-info{padding:.65rem .75rem .9rem}
+      .p-card-sizes{gap:.22rem;margin-bottom:.35rem}
+      .p-card-size{font-size:.52rem;padding:.12rem .32rem}
+      .p-card-swatch{width:11px;height:11px}
+      .p-acts{opacity:1;transform:translateY(0);padding:.5rem .6rem;gap:.35rem;padding-top:1.2rem}
+      .p-add{font-size:.58rem;padding:.45rem .3rem;letter-spacing:.06em;border-radius:.5rem}
+      .p-wish{width:28px;height:28px;border-radius:.5rem}
+      .p-wish svg{width:13px;height:13px}
+      .p-qty-btn{width:20px;height:20px;font-size:.78rem}
+      .p-qty-num{font-size:.72rem}
+      .p-oos-overlay{font-size:.52rem;padding:.28rem}
+      .p-badge{font-size:.52rem;padding:.18rem .45rem}
 
       /* ── MAMA AI ── */
       #mama-ai{padding:2.5rem 1rem}
