@@ -124,10 +124,10 @@
     .p-card-size[data-size].active{background:var(--wine);color:white;border-color:var(--wine)}
     .p-card-size-more{border-color:var(--blush);color:var(--muted);background:var(--blush);cursor:default}
     .p-card-colors{display:flex;align-items:center;gap:.3rem}
-    .p-card-swatch{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.1);display:inline-block;flex-shrink:0;cursor:pointer;transition:all .15s;outline:none}
+    .p-card-swatch{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.1);display:inline-block;flex-shrink:0;cursor:pointer;transition:transform .15s;outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
     .p-card-swatch[data-color]:hover{transform:scale(1.2);border-color:var(--wine)}
-    .p-card-swatch[data-color].active{border:2px solid var(--wine);box-shadow:0 0 0 2px white,0 0 0 4px var(--wine);outline:none}
-    .p-card-swatch:focus{outline:none}
+    .p-card-swatch[data-color].active{border:2px solid var(--wine);box-shadow:0 0 0 2px white,0 0 0 4px var(--wine)}
+    .p-card-swatch:focus,.p-card-swatch:focus-visible{outline:none;box-shadow:none}
     .p-card-swatch-more{font-size:.6rem;color:var(--muted);font-family:'DM Sans',sans-serif}
     .p-size{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
     .p-row{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem}
@@ -335,12 +335,16 @@
       .foot-bottom{flex-direction:column;gap:.6rem;text-align:center;font-size:.72rem}
 
       /* ── PAGE MODAL NAV ── */
-      .pm-nav{padding:.75rem 1rem}
+      .pm-nav{padding:.75rem 1rem;justify-content:flex-start}
       .pm-nav img{height:36px!important}
       .pm-breadcrumb{display:none!important}
       .pm-close{position:fixed;top:.7rem;right:.9rem;z-index:100;width:34px;height:34px;border-radius:50%;background:var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:1rem;border:1.5px solid var(--rose)}
       .pm-body{padding:1.2rem 1rem 3rem}
       .pm-title{font-size:2rem}
+      /* Bigger size/color on mobile product page */
+      .p-card-sizes{gap:.35rem}
+      .p-card-size{font-size:.68rem;padding:.22rem .55rem}
+      .p-card-colors .p-card-swatch{width:18px;height:18px}
 
       /* ── CHECKOUT ── */
       .checkout-grid{grid-template-columns:1fr!important;gap:1.2rem}
