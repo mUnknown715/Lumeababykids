@@ -442,16 +442,11 @@ function renderProds(batch = null) {
       imgBox.appendChild(buildEmojiSVG(c1, c2, emoji, catLabel, `g${i}`));
     }
 
+    // OOS strip
     if (isOutOfStock) {
       const oos = document.createElement('div');
       oos.className = 'p-oos-strip-row';
       oos.innerHTML = `<span>Out of Stock</span>`;
-      const wishOos = document.createElement('button');
-      wishOos.className = `p-wish-oos${isWished ? ' wished' : ''}`;
-      wishOos.id = `wish-oos-${p.id}`;
-      wishOos.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
-      wishOos.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
-      oos.appendChild(wishOos);
       imgBox.appendChild(oos);
     }
 
@@ -464,13 +459,20 @@ function renderProds(batch = null) {
       imgBox.appendChild(badge);
     }
 
-    // Actions overlay
+    // Heart — always top-right of card, outside imgBox to avoid overflow:hidden
+    const wishBtn = document.createElement('button');
+    wishBtn.className = `p-wish-float${isWished ? ' wished' : ''}`;
+    wishBtn.id = `wish-${p.id}`;
+    wishBtn.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
+    wishBtn.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
+    card.appendChild(wishBtn);
+
+    // Actions overlay — qty + add to cart only
     const acts = document.createElement('div');
     acts.className = 'p-acts';
     if (isOutOfStock) acts.style.display = 'none';
 
     let cardQty = 1;
-
     const qtyWrap = document.createElement('div');
     qtyWrap.className = 'p-card-qty';
     qtyWrap.innerHTML = `<button class="p-qty-btn p-qty-minus">−</button><span class="p-qty-num">1</span><button class="p-qty-btn p-qty-plus">+</button>`;
@@ -485,20 +487,10 @@ function renderProds(batch = null) {
     const addBtn = document.createElement('button');
     addBtn.className = 'p-add';
     addBtn.textContent = 'Add to Cart';
-    addBtn.onclick = e => {
-      e.stopPropagation();
-      openProduct(p.id);
-    };
-
-    const wishBtn = document.createElement('button');
-    wishBtn.className = `p-wish${isWished ? ' wished' : ''}`;
-    wishBtn.id = `wish-${p.id}`;
-    wishBtn.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
-    wishBtn.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
+    addBtn.onclick = e => { e.stopPropagation(); openProduct(p.id); };
 
     acts.appendChild(qtyWrap);
     acts.appendChild(addBtn);
-    acts.appendChild(wishBtn);
     imgBox.appendChild(acts);
 
     // Sizes available — selectable
