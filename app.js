@@ -442,11 +442,16 @@ function renderProds(batch = null) {
       imgBox.appendChild(buildEmojiSVG(c1, c2, emoji, catLabel, `g${i}`));
     }
 
-    // Out of stock overlay — bottom strip, won't overlap top badge
     if (isOutOfStock) {
       const oos = document.createElement('div');
-      oos.className = 'p-oos-overlay p-oos-strip';
-      oos.textContent = 'Out of Stock';
+      oos.className = 'p-oos-strip-row';
+      oos.innerHTML = `<span>Out of Stock</span>`;
+      const wishOos = document.createElement('button');
+      wishOos.className = `p-wish-oos${isWished ? ' wished' : ''}`;
+      wishOos.id = `wish-oos-${p.id}`;
+      wishOos.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
+      wishOos.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
+      oos.appendChild(wishOos);
       imgBox.appendChild(oos);
     }
 
@@ -484,15 +489,6 @@ function renderProds(batch = null) {
       e.stopPropagation();
       openProduct(p.id);
     };
-
-    // OOS wish button (outside acts, always visible)
-    const wishBtnOos = document.createElement('button');
-    wishBtnOos.className = `p-wish${isWished ? ' wished' : ''}`;
-    wishBtnOos.id = `wish-oos-${p.id}`;
-    wishBtnOos.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
-    wishBtnOos.style.cssText = 'position:absolute;bottom:2.2rem;right:.5rem;z-index:4;width:28px;height:28px;background:white;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)';
-    wishBtnOos.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
-    if (isOutOfStock) imgBox.appendChild(wishBtnOos);
 
     const wishBtn = document.createElement('button');
     wishBtn.className = `p-wish${isWished ? ' wished' : ''}`;
