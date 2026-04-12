@@ -158,7 +158,8 @@
         <span class="filter-label">Season</span>
         <div class="filter-chips" id="fc-season">
           <button class="fc active" data-group="season" data-val="all">All</button>
-          <button class="fc" data-group="season" data-val="spring">Spring / Summer</button>
+          <button class="fc" data-group="season" data-val="spring">Spring</button>
+          <button class="fc" data-group="season" data-val="summer">Summer</button>
           <button class="fc" data-group="season" data-val="winter">Winter / Autumn</button>
         </div>
       </div>
@@ -186,10 +187,10 @@
         <div style="display:flex;align-items:center;gap:.8rem;flex:1">
           <div class="fc-price-wrap">
             <div class="fc-price-track"><div class="fc-price-fill" id="fc-price-fill"></div></div>
-            <input type="range" id="fc-price-min" min="0" max="200" value="0" step="1" class="fc-range" oninput="updateFcPrice()">
-            <input type="range" id="fc-price-max" min="0" max="200" value="200" step="1" class="fc-range" oninput="updateFcPrice()">
+            <input type="range" id="fc-price-min" min="0" max="50" value="0" step="1" class="fc-range" oninput="updateFcPrice()">
+            <input type="range" id="fc-price-max" min="0" max="50" value="50" step="1" class="fc-range" oninput="updateFcPrice()">
           </div>
-          <span class="fc-price-label" id="fc-price-label">$0 — $200+</span>
+          <span class="fc-price-label" id="fc-price-label">$0 — $50+</span>
         </div>
       </div>
 
