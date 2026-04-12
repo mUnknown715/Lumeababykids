@@ -620,12 +620,12 @@ async function toggleWish(id, name) {
   const btn   = document.getElementById(`wish-${id}`);
   const pdBtn = document.getElementById('pd-wish-btn');
 
-  if (wishItems.has(id)) {
+  if (wishItems.has(String(id))) {
     // Remove from wishlist
     try {
       const res = await fetch(`${API_URL}/api/wishlist/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) {
-        wishItems.delete(id);
+        wishItems.delete(String(id));
         if (btn)   { btn.innerHTML = SVG.heart; btn.classList.remove('wished'); }
         if (pdBtn) { pdBtn.innerHTML = SVG.heart; pdBtn.classList.remove('wished'); }
       } else { showToast('Could not remove from wishlist'); }
@@ -639,7 +639,7 @@ async function toggleWish(id, name) {
         body: JSON.stringify({ product_id: id })
       });
       if (res.ok || res.status === 409) {
-        wishItems.add(id);
+        wishItems.add(String(id));
         if (btn)   { btn.innerHTML = SVG.heartFilled; btn.classList.add('wished'); }
         if (pdBtn) { pdBtn.innerHTML = SVG.heartFilled; pdBtn.classList.add('wished'); }
         if (res.ok) showToast(`${name} saved to favourites! 🌸`);
@@ -1066,7 +1066,7 @@ function accTab(btn, tabId) {
 
 function renderAccWishlist() {
   const el     = document.getElementById('acc-wishlist-content');
-  const wished = products.filter(p => wishItems.has(p.id));
+  const wished = products.filter(p => wishItems.has(String(p.id)));
   el.innerHTML = '';
   if (!wished.length) {
     el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.88rem">No saved favourites yet</div>';
