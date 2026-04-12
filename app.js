@@ -490,7 +490,7 @@ function renderProds(batch = null) {
     wishBtnOos.className = `p-wish${isWished ? ' wished' : ''}`;
     wishBtnOos.id = `wish-oos-${p.id}`;
     wishBtnOos.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
-    wishBtnOos.style.cssText = 'position:absolute;bottom:.5rem;right:.5rem;z-index:4;width:28px;height:28px;background:white;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)';
+    wishBtnOos.style.cssText = 'position:absolute;bottom:2.2rem;right:.5rem;z-index:4;width:28px;height:28px;background:white;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)';
     wishBtnOos.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
     if (isOutOfStock) imgBox.appendChild(wishBtnOos);
 
