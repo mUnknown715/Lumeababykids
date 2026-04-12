@@ -953,6 +953,7 @@ async function doSignIn() {
     localStorage.setItem('lumea_user',          JSON.stringify(data.data.user));
     currentUser = data.data.user;
     updateAccountUI();
+    await loadWishlistFromDB();
     closePage('page-signin');
     showToast(`Welcome back, ${currentUser.first_name}! 🌸`);
   } catch { showToast('Cannot connect to server'); }
@@ -1030,6 +1031,7 @@ async function doRegister() {
     localStorage.setItem('lumea_user',          JSON.stringify(data.data.user));
     currentUser = data.data.user;
     updateAccountUI();
+    await loadWishlistFromDB();
     closePage('page-register');
     // Reset register form
     document.getElementById('reg-step-1').style.display = 'block';
