@@ -4,6 +4,7 @@
    ═══════════════════════════════════════════════ */
 
 const API_URL = 'https://bilgy-stomatological-ryleigh.ngrok-free.dev';
+// const API_URL='http://localhost:4000';
 
 /* Ensure uploaded images always get the full backend URL */
 function resolveImg(url) {
@@ -225,14 +226,14 @@ async function openWishlist() {
   panel.appendChild(loading);
   showOverlay(panel);
 
-  const token = localStorage.getItem('lumea_token');
-  if (!token) {
+  
+  if (!currentUser) {
     loading.textContent = 'Sign in to view your favourites.';
     return;
   }
 
   try {
-    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: {  } });
     const data = await res.json();
     const wishList = data.data || [];
     loading.remove();
@@ -615,8 +616,8 @@ function buildEmojiSVG(c1, c2, emoji, catLabel, gradId) {
 }
 
 async function toggleWish(id, name) {
-  const token = localStorage.getItem('lumea_token');
-  if (!token) { showToast('Please sign in to save favourites 🌸'); openPage('page-signin'); return; }
+  
+  if (!currentUser) { showToast('Please sign in to save favourites 🌸'); openPage('page-signin'); return; }
 
   const btn   = document.getElementById(`wish-${id}`);
   const pdBtn = document.getElementById('pd-wish-btn');
@@ -624,7 +625,7 @@ async function toggleWish(id, name) {
   if (wishItems.has(String(id))) {
     // Remove from wishlist
     try {
-      const res = await fetch(`${API_URL}/api/wishlist/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/api/wishlist/${id}`, { method: 'DELETE', headers: {  } });
       if (res.ok) {
         wishItems.delete(String(id));
         if (btn)   { btn.innerHTML = SVG.heart; btn.classList.remove('wished'); }
@@ -636,7 +637,7 @@ async function toggleWish(id, name) {
     try {
       const res = await fetch(`${API_URL}/api/wishlist/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_id: id })
       });
       if (res.ok || res.status === 409) {
@@ -714,8 +715,8 @@ function quickSend(txt) {
 }
 async function doSend(msg) {
   // If not signed in, show friendly prompt instead of 401 error
-  const token = localStorage.getItem('lumea_token');
-  if (!token) {
+  
+  if (!currentUser) {
     appendChatMsg('ai', '💕 Please sign in to chat with Mama AI! Your conversations are private and personalized to you.');
     // Add a sign-in button inside the chat
     const c   = document.getElementById('chat-msgs');
@@ -735,7 +736,7 @@ async function doSend(msg) {
   try {
     const res = await fetch(`${API_URL}/api/ai/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: chatHistory })
     });
     hideTyping();
@@ -768,8 +769,9 @@ window.fetch = async (...args) => {
   let [resource, options = {}] = args;
   if (!options.signal) options = { ...options, signal: controller.signal };
 
-  // Add ngrok bypass header (harmless in production, required for ngrok testing)
+  // Add ngrok bypass header and credentials for cookies
   options.headers = { 'ngrok-skip-browser-warning': 'true', ...options.headers };
+  options.credentials = options.credentials || 'include';
 
   let res;
   try {
@@ -785,8 +787,7 @@ window.fetch = async (...args) => {
   clearTimeout(timeout);
 
   if (res.status === 401) {
-    const token = localStorage.getItem('lumea_token');
-    if (token) {
+    if (currentUser) {
       _forceSignOut('Your session has expired. Please sign in again.');
     }
   }
@@ -794,7 +795,7 @@ window.fetch = async (...args) => {
 };
 
 function _forceSignOut(msg) {
-  ['lumea_token','lumea_refresh_token','lumea_user'].forEach(k => localStorage.removeItem(k));
+  clearAuth();
   currentUser = null;
   closeAllPages();
   if (msg) showToast(msg);
@@ -803,11 +804,11 @@ function _forceSignOut(msg) {
 
 /* Validate token with server on every page load — catches deleted accounts instantly */
 async function validateSession() {
-  const token = localStorage.getItem('lumea_token');
-  if (!token) return;
+  
+  
   try {
     const res = await _origFetch(`${API_URL}/api/users/me`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: {  }
     });
     if (res.status === 401 || res.status === 404) {
       _forceSignOut('Your account no longer exists. Please create a new one.');
@@ -878,20 +879,35 @@ function updateAccountUI() {
 }
 
 async function initAuth() {
-  const saved = localStorage.getItem('lumea_user');
-  const token = localStorage.getItem('lumea_token');
-  if (saved && token) {
+  const remember = localStorage.getItem('lumea_remember') === '1';
+  const storage  = remember ? localStorage : sessionStorage;
+  const saved    = storage.getItem('lumea_user');
+  if (saved) {
     currentUser = JSON.parse(saved);
     updateAccountUI();
     await loadWishlistFromDB();
   }
 }
 
+function getToken() {
+  // Token is in httpOnly cookie — not accessible from JS (that's the point)
+  // This function kept for backward compat but returns null
+  return null;
+}
+
+function clearAuth() {
+  ['lumea_token','lumea_refresh_token','lumea_user'].forEach(k => {
+    localStorage.removeItem(k);
+    sessionStorage.removeItem(k);
+  });
+  localStorage.removeItem('lumea_remember');
+}
+
 async function loadWishlistFromDB() {
-  const token = localStorage.getItem('lumea_token');
-  if (!token) return;
+  
+  
   try {
-    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: {  } });
     if (!res.ok) return;
     const data = await res.json();
     wishItems  = new Set((data.data || []).map(w => String(w.product_id)));
@@ -940,18 +956,20 @@ function emailDomainError(e) {
 }
 
 async function doSignIn() {
-  const email = document.getElementById('si-email').value.trim();
-  const pass  = document.getElementById('si-pass').value;
+  const email    = document.getElementById('si-email').value.trim();
+  const pass     = document.getElementById('si-pass').value;
+  const remember = document.getElementById('si-remember')?.checked || false;
   if (!email || !pass) { showToast('Please fill in all fields'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { showToast('Please enter a valid email address.'); return; }
   try {
-    const res  = await fetch(`${API_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
+    const res  = await fetch(`${API_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass, remember }) });
     const data = await res.json().catch(() => null);
     if (!res.ok)    { showToast(data?.detail || 'Login failed'); return; }
     if (!data?.data){ showToast('Invalid server response'); return; }
-    localStorage.setItem('lumea_token',         data.data.access_token);
-    localStorage.setItem('lumea_refresh_token', data.data.refresh_token);
-    localStorage.setItem('lumea_user',          JSON.stringify(data.data.user));
+    // Only store non-sensitive user info — token is in httpOnly cookie
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('lumea_user', JSON.stringify(data.data.user));
+    localStorage.setItem('lumea_remember', remember ? '1' : '0');
     currentUser = data.data.user;
     updateAccountUI();
     await loadWishlistFromDB();
@@ -1027,9 +1045,9 @@ async function doRegister() {
     const data = await res.json().catch(() => null);
     if (!res.ok) { showToast(data?.detail || 'Registration failed'); return; }
     if (!data?.data) { showToast('Invalid server response'); return; }
-    localStorage.setItem('lumea_token',         data.data.access_token);
-    localStorage.setItem('lumea_refresh_token', data.data.refresh_token);
-    localStorage.setItem('lumea_user',          JSON.stringify(data.data.user));
+    // Token is in httpOnly cookie — only store non-sensitive user info
+    localStorage.setItem('lumea_user', JSON.stringify(data.data.user));
+    localStorage.setItem('lumea_remember', '1');
     currentUser = data.data.user;
     updateAccountUI();
     await loadWishlistFromDB();
@@ -1044,10 +1062,9 @@ async function doRegister() {
 
 async function doSignOut() {
   try {
-    const rt = localStorage.getItem('lumea_refresh_token');
-    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: rt }) });
+    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST' });
   } catch {}
-  ['lumea_token', 'lumea_refresh_token', 'lumea_user'].forEach(k => localStorage.removeItem(k));
+  clearAuth();
   currentUser = null;
   closePage('page-account');
   showToast('Signed out. See you soon!');
@@ -1166,14 +1183,14 @@ async function loadCheckoutAddresses() {
   const oN  = document.getElementById('co-option-new');
   const div = document.getElementById('co-divider');
   const nl  = document.getElementById('co-new-addr-label');
-  const token = localStorage.getItem('lumea_token');
+  
 
-  if (!token || !currentUser) {
+  if (!currentUser) {
     oS.style.display = 'none'; div.style.display = 'none'; nl.style.display = 'none'; oN.style.display = 'block';
     return;
   }
   try {
-    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: {  } });
     const data = await res.json();
     checkoutSavedAddresses = data.data || [];
   } catch { checkoutSavedAddresses = []; }
@@ -1282,13 +1299,13 @@ async function placeOrder() {
     }).filter(it => it.product_id)
   };
 
-  const token = localStorage.getItem('lumea_token');
-  if (!token) { showToast('Please sign in to place an order.'); if (confirmBtn) { confirmBtn.textContent = 'Confirm Order →'; confirmBtn.disabled = false; } return; }
+  
+  if (!currentUser) { showToast('Please sign in to place an order.'); if (confirmBtn) { confirmBtn.textContent = 'Confirm Order →'; confirmBtn.disabled = false; } return; }
 
   try {
     const res = await fetch(`${API_URL}/api/orders/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderBody)
     });
     if (!res.ok) {
@@ -1386,10 +1403,10 @@ function checkPwStrength(pw) {
 /* ── ADDRESSES ───────────────────────────────────── */
 async function renderAddrCards() {
   const wrap  = document.getElementById('addr-cards-wrap'); if (!wrap) return;
-  const token = localStorage.getItem('lumea_token');
-  if (!token) { wrap.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Please sign in to see your addresses.</div>'; return; }
+  
+  if (!currentUser) { wrap.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Please sign in to see your addresses.</div>'; return; }
   try {
-    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: {  } });
     const data = await res.json();
     addresses  = data.data || [];
   } catch { showToast('Could not load addresses'); return; }
@@ -1486,8 +1503,8 @@ async function saveAddress() {
   if (!fname || !lname || !street || !city || !building || !floor) {
     showToast('Please fill in all required fields'); return;
   }
-  const token = localStorage.getItem('lumea_token');
-  if (!token) { showToast('Please sign in first'); return; }
+  
+  if (!currentUser) { showToast('Please sign in first'); return; }
   const body = {
     first_name:  fname,
     last_name:   lname,
@@ -1507,7 +1524,7 @@ async function saveAddress() {
     const method = addrEditId ? 'PUT' : 'POST';
     const res    = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     const data = await res.json().catch(() => ({}));
@@ -1525,9 +1542,9 @@ async function saveAddress() {
   } catch { showToast('Connection error. Please try again.'); }
 }
 async function setDefaultAddr(id) {
-  const token = localStorage.getItem('lumea_token');
+  
   try {
-    await fetch(`${API_URL}/api/addresses/${id}/default`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
+    await fetch(`${API_URL}/api/addresses/${id}/default`, { method: 'PATCH', headers: {  } });
     // Update local addresses array
     addresses.forEach(a => a.is_default = (a.id === id) ? 1 : 0);
     renderAddrCards();
@@ -1546,8 +1563,8 @@ async function setDefaultAddr(id) {
   catch { showToast('Connection error'); }
 }
 async function deleteAddr(id) {
-  const token = localStorage.getItem('lumea_token');
-  try { await fetch(`${API_URL}/api/addresses/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); renderAddrCards(); showToast('Address removed.'); }
+  
+  try { await fetch(`${API_URL}/api/addresses/${id}`, { method: 'DELETE', headers: {  } }); renderAddrCards(); showToast('Address removed.'); }
   catch { showToast('Connection error'); }
 }
 
@@ -1559,9 +1576,9 @@ async function doChangePassword() {
   if (!current || !newPw || !confirm) { showToast('Please fill in all password fields'); return; }
   if (newPw.length < 8)               { showToast('New password must be at least 8 characters'); return; }
   if (newPw !== confirm)              { showToast('New passwords do not match'); return; }
-  const token = localStorage.getItem('lumea_token');
+  
   try {
-    const res  = await fetch(`${API_URL}/api/users/me/password`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ current_password: current, new_password: newPw }) });
+    const res  = await fetch(`${API_URL}/api/users/me/password`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password: current, new_password: newPw }) });
     const data = await res.json();
     if (!res.ok) { showToast(data.detail || 'Failed to update password'); return; }
     ['pw-current','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
@@ -1572,13 +1589,13 @@ async function doChangePassword() {
 /* ── ORDERS ──────────────────────────────────────── */
 async function loadOrders() {
   const el    = document.getElementById('orders-list'); if (!el) return;
-  const token = localStorage.getItem('lumea_token');
-  if (!token) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.88rem">Please sign in to see your orders.</div>'; return; }
+  
+  if (!currentUser) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.88rem">Please sign in to see your orders.</div>'; return; }
 
   el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.88rem"><div class="spin-ring" style="width:30px;height:30px;border:3px solid var(--rose);border-top-color:var(--wine);border-radius:50%;margin:0 auto 1rem;animation:spin .8s linear infinite"></div>Loading orders...</div>';
 
   try {
-    const res    = await fetch(`${API_URL}/api/orders/?limit=20&offset=0`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res    = await fetch(`${API_URL}/api/orders/?limit=20&offset=0`, { headers: {  } });
     const data   = await res.json();
     if (!res.ok) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Could not load orders.</div>'; return; }
     const orders = data.data || [];
@@ -1609,12 +1626,12 @@ async function doDeleteAccount() {
   const pw = document.getElementById('delete-confirm-pw').value;
   if (!pw) { showToast('Please enter your password to confirm'); return; }
   if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
-  const token = localStorage.getItem('lumea_token');
+  
   try {
-    const res  = await fetch(`${API_URL}/api/users/me`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ password: pw }) });
+    const res  = await fetch(`${API_URL}/api/users/me`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
     const data = await res.json();
     if (!res.ok) { showToast(data.detail || 'Incorrect password'); return; }
-    ['lumea_token','lumea_refresh_token','lumea_user'].forEach(k => localStorage.removeItem(k));
+    clearAuth();
     currentUser = null;
     closePage('page-account');
     showToast('Your account has been deleted. Goodbye!');
@@ -1647,11 +1664,11 @@ async function sendContactMessage() {
   if (!message) { showToast('Please write a message'); return; }
   const btn   = event.target;
   btn.textContent = 'Sending...'; btn.disabled = true;
-  const token = localStorage.getItem('lumea_token');
+  
   try {
     const res = await fetch(`${API_URL}/api/contact/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ subject, message, user_name: `${currentUser.first_name} ${currentUser.last_name}`, user_email: currentUser.email })
     });
     if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.detail || 'Could not send message.'); btn.textContent = 'Send Message'; btn.disabled = false; return; }
