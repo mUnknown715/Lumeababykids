@@ -102,6 +102,7 @@
     .p-img-box{overflow:hidden;aspect-ratio:3/3.8;position:relative}
     .p-img{width:100%;height:100%;display:block;transition:transform .5s ease;object-fit:cover}
     .p-acts{position:absolute;bottom:0;left:0;right:0;padding:.9rem;display:flex;gap:.5rem;opacity:0;transform:translateY(8px);transition:all .25s}
+    @media(hover:none){.p-acts{opacity:1;transform:translateY(0)}}
     .p-add{flex:1;padding:.58rem;background:var(--wine);color:white;border:none;border-radius:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;transition:background .2s}
     .p-add:hover{background:var(--deep-rose)}
     .p-wish{width:34px;height:34px;background:white;border:none;border-radius:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;color:var(--muted)}
@@ -292,8 +293,17 @@
 
       /* ── PRODUCT GRID ── */
       .prod-grid{grid-template-columns:repeat(2,1fr);gap:.8rem}
-      .p-name{font-size:.82rem}
-      .p-price{font-size:.88rem}
+      .p-name{font-size:.78rem;margin-bottom:.3rem}
+      .p-price{font-size:.85rem}
+      .p-old{font-size:.72rem}
+      .p-info{padding:.7rem .8rem 1rem}
+      .p-card-sizes{gap:.25rem;margin-bottom:.4rem}
+      .p-card-size{font-size:.55rem;padding:.14rem .35rem}
+      .p-card-swatch{width:12px;height:12px}
+      .p-acts{opacity:1;transform:translateY(0)}
+      .p-add{font-size:.6rem;padding:.5rem}
+      .p-oos-overlay{font-size:.55rem;padding:.2rem .5rem}
+      .p-badge{font-size:.55rem;padding:.2rem .5rem}
 
       /* ── MAMA AI ── */
       #mama-ai{padding:2.5rem 1rem}
