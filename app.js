@@ -759,6 +759,8 @@ async function doSend(msg) {
 /* ── PAGE MODALS ─────────────────────────────────── */
 /* ── Global fetch interceptor — timeout + auto-logout on 401 ── */
 const _origFetch = window.fetch;
+// Restore dev token from sessionStorage on page load (survives ngrok warning redirect)
+window._authToken = sessionStorage.getItem('lumea_dev_token') || null;
 window.fetch = async (...args) => {
   // 10-second timeout — important for slow Lebanese internet
   const controller = new AbortController();
@@ -890,12 +892,6 @@ async function initAuth() {
   }
 }
 
-function getToken() {
-  // Token is in httpOnly cookie — not accessible from JS (that's the point)
-  // This function kept for backward compat but returns null
-  return null;
-}
-
 function clearAuth() {
   ['lumea_token','lumea_refresh_token','lumea_user'].forEach(k => {
     localStorage.removeItem(k);
@@ -903,6 +899,7 @@ function clearAuth() {
   });
   localStorage.removeItem('lumea_remember');
   window._authToken = null;
+  sessionStorage.removeItem('lumea_dev_token');
 }
 
 async function loadWishlistFromDB() {
@@ -968,8 +965,10 @@ async function doSignIn() {
     const data = await res.json().catch(() => null);
     if (!res.ok)    { showToast(data?.detail || 'Login failed'); return; }
     if (!data?.data){ showToast('Invalid server response'); return; }
-    // Store token in memory as fallback for cross-origin (dev/ngrok)
-    if (data.data.access_token) window._authToken = data.data.access_token;
+    if (data.data.access_token) {
+      window._authToken = data.data.access_token;
+      sessionStorage.setItem('lumea_dev_token', data.data.access_token);
+    }
     const storage = remember ? localStorage : sessionStorage;
     storage.setItem('lumea_user', JSON.stringify(data.data.user));
     localStorage.setItem('lumea_remember', remember ? '1' : '0');
@@ -1048,7 +1047,10 @@ async function doRegister() {
     const data = await res.json().catch(() => null);
     if (!res.ok) { showToast(data?.detail || 'Registration failed'); return; }
     if (!data?.data) { showToast('Invalid server response'); return; }
-    if (data.data.access_token) window._authToken = data.data.access_token;
+    if (data.data.access_token) {
+      window._authToken = data.data.access_token;
+      sessionStorage.setItem('lumea_dev_token', data.data.access_token);
+    }
     localStorage.setItem('lumea_user', JSON.stringify(data.data.user));
     localStorage.setItem('lumea_remember', '1');
     currentUser = data.data.user;
