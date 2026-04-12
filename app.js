@@ -524,7 +524,7 @@ function renderProds(batch = null) {
     if (colorOptions.length) {
       const shown = colorOptions.slice(0, 5);
       const extra = colorOptions.length - shown.length;
-      colorsHtml = `<div class="p-card-colors" id="pcc-${p.id}">${shown.map(c => `<span class="p-card-swatch" data-color="${c.name||c}" style="background:${c.hex||c.color||c}" title="${c.name||''}"></span>`).join('')}${extra > 0 ? `<span class="p-card-swatch-more">+${extra}</span>` : ''}</div>`;
+      colorsHtml = `<div class="p-card-colors" id="pcc-${p.id}">${shown.map(c => `<span class="p-card-swatch" tabindex="-1" data-color="${c.name||c}" style="background:${c.hex||c.color||c}" title="${c.name||''}"></span>`).join('')}${extra > 0 ? `<span class="p-card-swatch-more">+${extra}</span>` : ''}</div>`;
     }
 
     // Info
