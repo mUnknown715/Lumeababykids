@@ -559,6 +559,7 @@ function renderProds(batch = null) {
 
     // Wire up color selection
     info.querySelectorAll('.p-card-swatch[data-color]').forEach(sw => {
+      sw.addEventListener('pointerup', () => setTimeout(() => sw.blur(), 0));
       sw.addEventListener('click', e => {
         e.stopPropagation();
         sw.blur();
