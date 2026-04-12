@@ -111,6 +111,8 @@
     .p-wish-float svg{width:13px;height:13px}
     .p-acts{position:absolute;bottom:0;left:0;right:0;padding:.5rem .6rem;padding-top:2rem;display:flex;gap:.4rem;align-items:center;opacity:0;transform:translateY(8px);transition:all .25s;background:linear-gradient(to top,rgba(46,26,34,.82) 0%,transparent 100%);box-sizing:border-box}
     @media(hover:none){.p-acts{opacity:1;transform:translateY(0)}}
+    @media(hover:none){.p-card-swatch:focus,.p-card-swatch:focus-visible{outline:0 !important;box-shadow:none !important}
+    .p-card-swatch:not(.active):focus{border-color:rgba(0,0,0,.1) !important;box-shadow:none !important}}
     .p-card-qty{display:flex;align-items:center;gap:.3rem;flex-shrink:0;background:rgba(255,255,255,.18);border-radius:3rem;padding:.25rem .5rem}
     .p-qty-btn{width:20px;height:20px;border-radius:50%;border:none;background:rgba(255,255,255,.25);color:white;font-size:.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
     .p-qty-btn:hover{background:rgba(255,255,255,.45)}
@@ -131,11 +133,11 @@
     .p-card-size[data-size].active{background:var(--wine);color:white;border-color:var(--wine)}
     .p-card-size-more{border-color:var(--blush);color:var(--muted);background:var(--blush);cursor:default}
     .p-card-colors{display:flex;align-items:center;gap:.3rem}
-    .p-card-swatch{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.1);display:inline-block;flex-shrink:0;cursor:pointer;transition:transform .15s;outline:none !important;box-shadow:none;-webkit-tap-highlight-color:transparent;-webkit-appearance:none}
-    .p-card-swatch[data-color]:hover{transform:scale(1.2);border-color:var(--wine)}
-    .p-card-swatch[data-color].active{border:2px solid var(--wine);box-shadow:0 0 0 2px white,0 0 0 4px var(--wine)}
-    .p-card-swatch:focus,.p-card-swatch:focus-visible,.p-card-swatch:focus-within{outline:none !important;box-shadow:none !important}
-    .p-card-swatch:not(.active):focus,.p-card-swatch:not(.active):focus-visible{box-shadow:none !important;border-color:rgba(0,0,0,.1) !important}
+    .p-card-swatch{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.1);display:inline-block;flex-shrink:0;cursor:pointer;transition:transform .15s;outline:0 !important;-webkit-tap-highlight-color:rgba(0,0,0,0) !important;-webkit-appearance:none;appearance:none}
+    .p-card-swatch[data-color]:hover{transform:scale(1.2)}
+    .p-card-swatch[data-color].active{border:3px solid var(--wine);box-shadow:0 0 0 2px white inset}
+    .p-card-swatch:focus,.p-card-swatch:focus-visible,.p-card-swatch:focus-within,.p-card-swatch:active{outline:0 !important;box-shadow:none !important}
+    .p-card-swatch:not(.active){box-shadow:none !important;border-color:rgba(0,0,0,.1) !important}
     .p-card-swatch-more{font-size:.6rem;color:var(--muted);font-family:'DM Sans',sans-serif}
     .p-size{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
     .p-row{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem}
