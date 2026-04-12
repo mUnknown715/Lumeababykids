@@ -409,7 +409,7 @@ function renderProds(batch = null) {
 
   toRender.forEach((p, idx) => {
     const i = startIdx + idx;
-    const isWished  = wishItems.has(p.id);
+    const isWished  = wishItems.has(String(p.id));
     const c1        = p.color_primary  || '#fce4ec';
     const c2        = p.color_secondary|| '#f8bbd0';
     const emoji     = p.emoji          || '👶';
@@ -893,10 +893,10 @@ async function loadWishlistFromDB() {
     const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) return;
     const data = await res.json();
-    wishItems  = new Set((data.data || []).map(w => w.product_id));
+    wishItems  = new Set((data.data || []).map(w => String(w.product_id)));
     // Refresh product card heart icons
     document.querySelectorAll('[id^="wish-"]').forEach(btn => {
-      const pid = btn.id.replace('wish-', '');
+      const pid = String(btn.id.replace('wish-', ''));
       if (wishItems.has(pid)) { btn.innerHTML = SVG.heartFilled; btn.classList.add('wished'); }
       else                    { btn.innerHTML = SVG.heart;       btn.classList.remove('wished'); }
     });
@@ -2270,6 +2270,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (append) { products = [...products, ...newBatch]; renderProds(newBatch); }
       else { products = newBatch; grid.innerHTML = ''; renderProds(null); }
+
+      // Refresh wish hearts after render
+      document.querySelectorAll('[id^="wish-"]').forEach(btn => {
+        const pid = String(btn.id.replace('wish-', ''));
+        if (wishItems.has(pid)) { btn.innerHTML = SVG.heartFilled; btn.classList.add('wished'); }
+        else                    { btn.innerHTML = SVG.heart;       btn.classList.remove('wished'); }
+      });
 
       if (!newBatch.length && !append) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);font-size:.9rem">No products found.</div>';
       updateLoadMoreBtn();
