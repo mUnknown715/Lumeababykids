@@ -343,10 +343,11 @@
       .foot-bottom{flex-direction:column;gap:.6rem;text-align:center;font-size:.72rem}
 
       /* ── PAGE MODAL NAV ── */
-      .pm-nav{padding:.75rem 1rem;justify-content:flex-start;gap:0;position:relative}
-      .pm-nav .pm-breadcrumb{display:none!important}
-      .pm-nav img{height:38px!important}
-      .pm-close{position:absolute;top:50%;right:1rem;transform:translateY(-50%)}
+      .pm-nav{padding:.75rem 1rem !important;justify-content:flex-start !important;gap:0 !important;position:relative !important}
+      .pm-nav .pm-breadcrumb{display:none !important}
+      .pm-nav .nav-logo img{height:38px !important}
+      .pm-nav .nav-logo{margin-left:0 !important;padding-left:0 !important}
+      .pm-close{position:absolute !important;top:50% !important;right:1rem !important;transform:translateY(-50%) !important;left:auto !important}
       .pm-close{position:fixed;top:.7rem;right:.9rem;z-index:100;width:34px;height:34px;border-radius:50%;background:var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:1rem;border:1.5px solid var(--rose)}
       .pm-body{padding:1.2rem 1rem 3rem}
       .pm-title{font-size:2rem}
