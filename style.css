@@ -347,8 +347,7 @@
       .pm-nav .pm-breadcrumb{display:none !important}
       .pm-nav .nav-logo img{height:38px !important}
       .pm-nav .nav-logo{margin-left:0 !important;padding-left:0 !important}
-      .pm-close{position:absolute !important;top:50% !important;right:1rem !important;transform:translateY(-50%) !important;left:auto !important}
-      .pm-close{position:fixed;top:.7rem;right:.9rem;z-index:100;width:34px;height:34px;border-radius:50%;background:var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:1rem;border:1.5px solid var(--rose)}
+      .pm-close{position:absolute !important;top:50% !important;right:1rem !important;transform:translateY(-50%) !important;left:auto !important;width:34px;height:34px;border-radius:50%;background:var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:1rem;border:1.5px solid var(--rose)}
       .pm-body{padding:1.2rem 1rem 3rem}
       .pm-title{font-size:2rem}
       /* Bigger size/color on mobile product page */
