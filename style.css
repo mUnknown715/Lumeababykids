@@ -1,5 +1,5 @@
 :root {
-      color-scheme: light dark;
+      color-scheme: only light;
       --blush:#fce8ed; --rose:#f3bfca; --dusty:#e096a8; --deep-rose:#c55a78;
       --wine:#8b3352; --cream:#fdf8f5; --warm:#fff9f7; --text:#2e1a22;
       --muted:#9a6878; --gold:#c9a46a; --shadow:rgba(139,51,82,.1);
@@ -7,6 +7,7 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{color-scheme:only light}
     body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--warm);color:var(--text);overflow-x:hidden}
+    body:not(.dark){color-scheme:only light;background:#fff9f7!important;color:#2e1a22!important}
     ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--blush)} ::-webkit-scrollbar-thumb{background:var(--dusty);border-radius:10px}
 
     /* NAV */
