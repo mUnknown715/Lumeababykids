@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Luméa — Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <img src="logo.png" alt="Luméa" style="width:160px;height:auto;display:block;margin:0 auto 1rem">
+    <div class="login-sub">Admin Dashboard</div>
+    <div>
+      <label class="fm-label">Email</label>
+      <input class="fm-input" type="email" id="adm-email" placeholder="admin@lumea.com" />
+      <label class="fm-label">Password</label>
+      <input class="fm-input" type="password" id="adm-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()" />
+      <button class="btn-wine" onclick="adminLogin()">Sign In</button>
+      <div class="error-msg" id="login-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="dashboard" id="dashboard">
+  <!-- Mobile hamburger button -->
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <img src="logo.png" alt="Luméa" style="width:160px;height:auto;display:block;margin-bottom:.5rem">
+      <small>Admin Panel</small>
+    </div>
+    <button class="nav-item active" onclick="showTab('tab-overview',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </button>
+    <button class="nav-item" onclick="showTab('tab-products',this);loadAdminProducts()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      Products
+    </button>
+    <button class="nav-item" onclick="showTab('tab-orders',this);loadAdminOrders()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Orders
+    </button>
+    <button class="nav-item" onclick="showTab('tab-users',this);loadAdminUsers()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Customers
+    </button>
+    <button class="nav-item" onclick="showTab('tab-discounts',this);loadDiscounts()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Discounts
+    </button>
+    <div class="sidebar-footer">
+      <button class="nav-item" onclick="adminLogout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+
+    <!-- OVERVIEW TAB -->
+    <div class="tab active" id="tab-overview">
+      <div class="page-header">
+        <div class="page-title">Good morning, <em>Admin</em></div>
+        <div style="font-size:.82rem;color:var(--muted);margin-top:.3rem">Here's what's happening with Luméa today.</div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div><div class="stat-label">Total Orders</div><div class="stat-value" id="stat-orders">—</div></div>
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Total Revenue</div><div class="stat-value" id="stat-revenue">—</div></div>
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-label">Customers</div><div class="stat-value" id="stat-users">—</div></div>
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg></div><div class="stat-label">Active Products</div><div class="stat-value" id="stat-products">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Orders</div>
+        <table><thead><tr><th>Order ID</th><th>Customer</th><th>Email</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="recent-orders-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PRODUCTS TAB -->
+    <div class="tab" id="tab-products">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+        <div class="page-title">Products</div>
+        <button class="btn-wine" style="width:auto;padding:.7rem 1.8rem;font-size:.75rem" onclick="openProductModal(null)">+ Add Product</button>
+      </div>
+      <div class="card">
+        <table><thead><tr><th>Image</th><th>Name</th><th>Age Group</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="products-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <div class="tab" id="tab-orders">
+      <div class="page-header"><div class="page-title">All <em>Orders</em></div></div>
+      <div class="card">
+        <table><thead><tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Street</th><th>City</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="orders-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- USERS TAB -->
+    <div class="tab" id="tab-users">
+      <div class="page-header"><div class="page-title">Customers</div></div>
+      <div class="card">
+        <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+        <tbody id="users-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- DISCOUNTS TAB -->
+    <div class="tab" id="tab-discounts">
+      <div class="page-header"><div class="page-title">Discount <em>Codes</em></div></div>
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-title">Create New Code</div>
+        <div style="display:flex;flex-direction:column;gap:.8rem">
+          <div class="fm-group" style="margin:0">
+            <label class="fm-label">Code *</label>
+            <input type="text" id="dc-code" placeholder="e.g. SUMMER20" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"/>
+          </div>
+          <div class="fm-group" style="margin:0">
+            <label class="fm-label">Discount % *</label>
+            <input type="number" id="dc-percent" placeholder="e.g. 20" min="1" max="100"/>
+          </div>
+          <div class="fm-group" style="margin:0">
+            <label class="fm-label">Max Uses (optional)</label>
+            <input type="number" id="dc-uses" placeholder="Leave blank = unlimited" min="1"/>
+          </div>
+          <button class="btn-wine" style="width:auto;padding:.7rem 1.4rem;font-size:.75rem;align-self:flex-start" onclick="createDiscount()">+ Create</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">All Codes</div>
+        <table><thead><tr><th>Code</th><th>Discount</th><th>Uses</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody id="discounts-body"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modal-title-text">Add Product</span>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="fm-group fm-full">
+        <label>Product Name *</label>
+        <input type="text" id="pf-name" placeholder="Petal Smock Dress" oninput="autoSlug()" />
+      </div>
+      <div class="fm-group fm-full">
+        <label>Slug (URL) *</label>
+        <input type="text" id="pf-slug" placeholder="petal-smock-dress" />
+      </div>
+      <div class="fm-group fm-full">
+        <label>Description</label>
+        <textarea id="pf-desc" placeholder="Describe this product..."></textarea>
+      </div>
+      <div class="fm-group">
+        <label>Price ($) *</label>
+        <input type="number" id="pf-price" placeholder="38.00" step="0.01" min="0" />
+      </div>
+      <div class="fm-group">
+        <label>Compare Price ($)</label>
+        <input type="number" id="pf-compare" placeholder="50.00 (optional)" step="0.01" min="0" />
+      </div>
+      <div class="fm-group fm-full">
+        <label>Sizes & Stock <span style="font-size:.65rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">— check the sizes available and set quantity for each</span></label>
+        <div id="pf-sizes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.6rem;margin-top:.4rem"></div>
+        <div style="margin-top:.7rem;font-size:.72rem;color:var(--muted)">Total stock: <strong id="pf-stock-total" style="color:var(--wine)">0</strong></div>
+        <input type="hidden" id="pf-stock" value="0"/>
+        <input type="hidden" id="pf-size" value=""/>
+      </div>
+      <div class="fm-group">
+        <label>Product Type *</label>
+        <select id="pf-type">
+          <option value="">— None —</option>
+          <option value="clothes">Clothes</option>
+          <option value="blankets">Blankets</option>
+          <option value="accessories">Accessories</option>
+        </select>
+      </div>
+      <div class="fm-group fm-full">
+        <label>Age Group</label>
+        <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.4rem">
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="pf-age-check" value="newborn"> Newborn</label>
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="pf-age-check" value="baby"> Baby</label>
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="pf-age-check" value="toddler"> Toddler</label>
+        </div>
+      </div>
+      <div class="fm-group">
+        <label>Gender</label>
+        <select id="pf-gender">
+          <option value="">— None —</option>
+          <option value="boy">Boy</option>
+          <option value="girl">Girl</option>
+          <option value="unisex">Unisex</option>
+        </select>
+      </div>
+      <div class="fm-group">
+        <label>Season</label>
+        <select id="pf-season">
+          <option value="">— None —</option>
+          <option value="spring">Spring / Summer</option>
+          <option value="winter">Winter / Autumn</option>
+        </select>
+      </div>
+      <div class="fm-group">
+        <label>Emoji</label>
+        <input type="text" id="pf-emoji" placeholder="👗" maxlength="4" />
+      </div>
+      <div class="fm-group">
+        <label>Primary Color</label>
+        <input type="color" id="pf-c1" value="#fce4ec" style="height:42px;padding:.3rem" />
+      </div>
+      <div class="fm-group">
+        <label>Secondary Color</label>
+        <input type="color" id="pf-c2" value="#f8bbd0" style="height:42px;padding:.3rem" />
+      </div>
+      <div class="fm-group fm-full">
+        <label>Available Colors <span style="font-size:.65rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">— add the colors this product comes in</span></label>
+        <div id="pf-colors-list" style="display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:.7rem"></div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+          <input type="color" id="pf-color-pick" value="#f3bfca" style="height:36px;width:48px;padding:.2rem;border-radius:.5rem;border:1.5px solid var(--rose);cursor:pointer"/>
+          <input type="text" id="pf-color-name" placeholder="Color name (e.g. Rose Pink)" style="padding:.4rem .8rem;border:1.5px solid var(--rose);border-radius:.6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;flex:1;min-width:140px"/>
+          <button type="button" onclick="addColorSwatch()" style="padding:.4rem 1rem;background:var(--wine);color:white;border:none;border-radius:.6rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;white-space:nowrap">+ Add</button>
+        </div>
+        <input type="hidden" id="pf-colors" value=""/>
+      </div>
+      <div class="fm-group fm-full">
+        <label>Product Images <span style="font-size:.65rem;color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none">(upload from your PC — first image is the main one)</span></label>
+        <div id="image-upload-area" style="border:2px dashed var(--rose);border-radius:.8rem;padding:1.2rem;text-align:center;cursor:pointer;transition:border .2s;background:var(--warm)" onclick="document.getElementById('pf-image-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--wine)'" ondragleave="this.style.borderColor='var(--rose)'" ondrop="handleImageDrop(event)">
+          <div style="color:var(--muted);font-size:.85rem">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto .5rem;color:var(--dusty)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Click or drag images here
+            <div style="font-size:.72rem;color:var(--rose);margin-top:.3rem">JPEG · PNG · WEBP · max 8MB each</div>
+          </div>
+        </div>
+        <input type="file" id="pf-image-file" accept="image/*" multiple style="display:none" onchange="handleImageFiles(this.files)"/>
+        <div id="pf-image-previews" style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.8rem"></div>
+      </div>
+      <div class="fm-group">
+        <label>Badge</label>
+        <select id="pf-badge">
+          <option value="">— None —</option>
+          <option value="new">New</option>
+          <option value="sale">Sale</option>
+          <option value="bestseller">Bestseller</option>
+        </select>
+      </div>
+      <div class="fm-group">
+        <label>Active</label>
+        <select id="pf-active">
+          <option value="true">Yes — visible in store</option>
+          <option value="false">No — hidden</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:.8rem;margin-top:1.5rem;justify-content:flex-end">
+      <button class="btn-outline-sm" onclick="closeProductModal()">Cancel</button>
+      <button class="btn-wine" style="width:auto;padding:.75rem 2rem;font-size:.78rem" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin-toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
