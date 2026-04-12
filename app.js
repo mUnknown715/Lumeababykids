@@ -442,7 +442,7 @@ function renderProds(batch = null) {
       imgBox.appendChild(buildEmojiSVG(c1, c2, emoji, catLabel, `g${i}`));
     }
 
-    // Out of stock overlay
+    // Out of stock overlay — bottom strip, won't overlap top badge
     if (isOutOfStock) {
       const oos = document.createElement('div');
       oos.className = 'p-oos-overlay';
@@ -463,6 +463,19 @@ function renderProds(batch = null) {
     const acts = document.createElement('div');
     acts.className = 'p-acts';
 
+    let cardQty = 1;
+
+    const qtyWrap = document.createElement('div');
+    qtyWrap.className = 'p-card-qty';
+    qtyWrap.innerHTML = `<button class="p-qty-btn p-qty-minus">−</button><span class="p-qty-num">1</span><button class="p-qty-btn p-qty-plus">+</button>`;
+
+    const qtyMinus = qtyWrap.querySelector('.p-qty-minus');
+    const qtyPlus  = qtyWrap.querySelector('.p-qty-plus');
+    const qtyNum   = qtyWrap.querySelector('.p-qty-num');
+
+    qtyMinus.onclick = e => { e.stopPropagation(); if (cardQty > 1) { cardQty--; qtyNum.textContent = cardQty; } };
+    qtyPlus.onclick  = e => { e.stopPropagation(); if (cardQty < 10) { cardQty++; qtyNum.textContent = cardQty; } };
+
     const addBtn = document.createElement('button');
     addBtn.className = 'p-add';
     addBtn.textContent = 'Add to Cart';
@@ -479,6 +492,7 @@ function renderProds(batch = null) {
     wishBtn.innerHTML = isWished ? SVG.heartFilled : SVG.heart;
     wishBtn.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
 
+    acts.appendChild(qtyWrap);
     acts.appendChild(addBtn);
     acts.appendChild(wishBtn);
     imgBox.appendChild(acts);
@@ -572,8 +586,8 @@ function renderProds(batch = null) {
       const sizePart  = selectedSize  ? ` (${selectedSize})` : '';
       const colorPart = selectedColor ? ` — ${selectedColor}` : '';
       const label = `${p.name}${sizePart}${colorPart}`;
-      addToCartData(label, p.price);
-      showToast(`${label} added to cart! 🌸`);
+      for (let i = 0; i < cardQty; i++) addToCartData(label, p.price);
+      showToast(`${label} ×${cardQty} added to cart! 🌸`);
       // Flash the button green briefly
       addBtn.style.background = '#27ae60';
       addBtn.textContent = 'Added!';
