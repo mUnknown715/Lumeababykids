@@ -3,7 +3,8 @@
    All UI logic, no inline HTML strings
    ═══════════════════════════════════════════════ */
 
-const API_URL = 'https://bilgy-stomatological-ryleigh.ngrok-free.dev';
+// const API_URL = 'https://bilgy-stomatological-ryleigh.ngrok-free.dev';
+const API_URL='http://localhost:4000';
 
 /* Ensure uploaded images always get the full backend URL */
 function resolveImg(url) {
@@ -815,15 +816,15 @@ async function validateSession() {
   }
 }
 
-/* ── FIX 2: History-aware page modals (browser back/forward) ── */
+/* ── History-aware page modals (browser back/forward) ── */
 const ALL_PAGES = ['page-checkout','page-signin','page-register','page-account','page-product'];
 
 function openPage(id) {
   const el = document.getElementById(id);
-  if (!el) return;
+  if (!el || el.classList.contains('open')) return;
   el.classList.add('open');
   document.body.style.overflow = 'hidden';
-  history.pushState({ page: id }, '', '');
+  history.pushState({ page: id }, '');
 }
 
 function closePage(id) {
@@ -842,19 +843,15 @@ function closeAllPages() {
   document.body.style.overflow = '';
 }
 
-// Back AND forward buttons — check the state to know which direction
-window.addEventListener('popstate', (e) => {
-  if (e.state && e.state.page) {
-    // Going FORWARD — re-open that page
-    const el = document.getElementById(e.state.page);
-    if (el) {
-      el.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-  } else {
-    // Going BACK — close the top-most open page
-    const open = ALL_PAGES.filter(id => document.getElementById(id)?.classList.contains('open'));
-    if (open.length) closePage(open[open.length - 1]);
+// Back button — close the top-most open modal
+window.addEventListener('popstate', () => {
+  const open = ALL_PAGES.filter(id => document.getElementById(id)?.classList.contains('open'));
+  if (open.length) {
+    // Close topmost without pushing new history entry
+    const el = document.getElementById(open[open.length - 1]);
+    if (el) el.classList.remove('open');
+    const anyOpen = ALL_PAGES.some(p => document.getElementById(p)?.classList.contains('open'));
+    if (!anyOpen) document.body.style.overflow = '';
   }
 });
 
