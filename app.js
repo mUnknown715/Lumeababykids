@@ -316,13 +316,6 @@ async function loadProducts(filter, append = false) {
     loadBtn.disabled    = true;
   }
 
-  if (!document.getElementById('spin-style')) {
-    const s = document.createElement('style');
-    s.id = 'spin-style';
-    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
-    document.head.appendChild(s);
-  }
-
   try {
     let url = `${API_URL}/api/products/?limit=${PRODUCTS_PER_PAGE}&offset=${currentOffset}`;
     if (activePage === 'blankets' || activePage === 'accessories') {
@@ -421,6 +414,7 @@ function renderProds(batch = null) {
 
     const card = document.createElement('div');
     card.className = `p-card${isOutOfStock ? ' p-card-oos' : ''}`;
+    card.style.animationDelay = `${idx * 40}ms`;
     card.onclick = () => openProduct(p.id);
 
     // Image box
@@ -2166,18 +2160,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     sunIcon.style.display  = isDark ? 'block' : 'none';
   }
 
-  const savedTheme = localStorage.getItem('lumea_theme');
-  // Always default to light — only go dark if user explicitly chose dark
+  const savedTheme = sessionStorage.getItem('lumea_theme');
+  // Always default to light — only go dark if user explicitly chose dark this session
   const isDarkMode = savedTheme === 'dark';
   applyTheme(isDarkMode);
-
-  // Do NOT listen to system theme changes — website is always light by default
 
   themeBtn.addEventListener('click', () => {
     const isDark = document.body.classList.toggle('dark');
     moonIcon.style.display = isDark ? 'none'  : 'block';
     sunIcon.style.display  = isDark ? 'block' : 'none';
-    localStorage.setItem('lumea_theme', isDark ? 'dark' : 'light');
+    sessionStorage.setItem('lumea_theme', isDark ? 'dark' : 'light');
   });
 
   // ── HORIZONTAL FILTER ────────────────────────────────────────────────────────
@@ -2241,13 +2233,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.textContent = hidden ? 'Show ▼' : 'Hide ▲';
   };
 
+  // Filters closed by default
+  const filtersBody = document.getElementById('filters-body');
+  const filtersBtn  = document.getElementById('fc-toggle-btn');
+  if (filtersBody) filtersBody.classList.add('hidden');
+  if (filtersBtn)  filtersBtn.textContent = 'Show ▼';
+
   async function runFilteredLoad(append = false) {
     const grid    = document.getElementById('prod-grid');
     const loadBtn = document.getElementById('load-btn');
 
     if (!append) {
       currentOffset = 0; products = [];
-      grid.style.opacity = '0.4';
+      grid.style.transition = 'opacity .2s ease';
+      grid.style.opacity = '0';
       grid.style.pointerEvents = 'none';
     } else {
       if (loadBtn) { loadBtn.textContent = 'Loading…'; loadBtn.disabled = true; }
@@ -2290,11 +2289,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       currentOffset += data.data.length;
 
-      grid.style.opacity = '';
-      grid.style.pointerEvents = '';
-
       if (append) { products = [...products, ...newBatch]; renderProds(newBatch); }
       else { products = newBatch; grid.innerHTML = ''; renderProds(null); }
+
+      // Fade in smoothly
+      requestAnimationFrame(() => {
+        grid.style.opacity = '1';
+        grid.style.pointerEvents = '';
+      });
 
       // Refresh wish hearts after render
       document.querySelectorAll('[id^="wish-"]').forEach(btn => {
@@ -2308,7 +2310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch(err) {
       console.error('Filter load error:', err);
-      grid.style.opacity = '';
+      grid.style.opacity = '1';
       grid.style.pointerEvents = '';
       if (!append) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);font-size:.9rem">Could not load products.</div>';
       updateLoadMoreBtn();
