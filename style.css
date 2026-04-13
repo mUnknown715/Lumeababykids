@@ -92,7 +92,8 @@
     /* WhatsApp float button */
     .wa-float{position:fixed;bottom:1.8rem;right:1.8rem;z-index:999;width:56px;height:56px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.4);transition:transform .2s,box-shadow .2s;text-decoration:none}
     .wa-float:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(37,211,102,.55)}
-    .p-card{background:white;border-radius:1.2rem;overflow:hidden;box-shadow:0 2px 16px var(--shadow);transition:transform .3s,box-shadow .3s;cursor:pointer;position:relative}
+    .p-card{background:white;border-radius:1.2rem;overflow:hidden;box-shadow:0 2px 16px var(--shadow);transition:transform .3s,box-shadow .3s;cursor:pointer;position:relative;animation:cardIn .3s ease both}
+    @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     .p-card-oos{opacity:.75}
     .p-card-oos .p-img{filter:grayscale(30%)}
     .p-oos-overlay{position:absolute;top:.5rem;left:.5rem;background:rgba(46,26,34,.78);color:white;font-family:'DM Sans',sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .6rem;border-radius:3rem;z-index:4}
@@ -686,3 +687,5 @@
     body.dark #pd-selectors button.color-circle,
     body.dark #pd-selectors button.color-circle:hover,
     body.dark #pd-selectors button.color-circle:not(.size-selected) { background: attr(style) !important; border-color: transparent !important; }
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-ring{border-radius:50%;animation:spin .8s linear infinite}
