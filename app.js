@@ -10,7 +10,7 @@ const API_URL='http://localhost:4000';
 function resolveImg(url) {
   if (!url || url.trim() === '') return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return API_URL + url; // e.g. /uploads/abc.jpg → http://localhost:4000/uploads/abc.jpg
+  return API_URL + url;
 }
 
 /* ── SVG ICONS ─────────────────────────────────── */
@@ -28,8 +28,8 @@ const SVG = {
 let cartItems = [];
 let wishItems = new Set();
 let products  = [];
-let appliedDiscount = null; // { code, percentage }
-let activeFilters = new Set(['all']); // multi-select filters
+let appliedDiscount = null;
+let activeFilters = new Set(['all']);
 let currentUser   = null;
 let addresses    = [];
 let addrEditId   = null;
@@ -53,7 +53,7 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.style.opacity = '0', 2600);
 }
 
-/* ── OVERLAY (cart / search / wishlist panels) ──── */
+/* ── OVERLAY ────────────────────────────────────── */
 function showOverlay(el) {
   let ov = document.getElementById('lumea-overlay');
   if (!ov) {
@@ -226,14 +226,13 @@ async function openWishlist() {
   panel.appendChild(loading);
   showOverlay(panel);
 
-  
   if (!currentUser) {
     loading.textContent = 'Sign in to view your favourites.';
     return;
   }
 
   try {
-    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: {  } });
+    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: {} });
     const data = await res.json();
     const wishList = data.data || [];
     loading.remove();
@@ -247,7 +246,6 @@ async function openWishlist() {
     }
 
     wishList.forEach(w => {
-      const p = products.find(x => x.id === w.product_id) || w;
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;align-items:center;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--blush)';
       const thumb = w.image_url
@@ -385,9 +383,6 @@ function updateLoadMoreBtn() {
 
 function renderProds(batch = null) {
   const grid = document.getElementById('prod-grid');
-
-  // batch = null means fresh render (clear grid, render all products)
-  // batch = array means append mode (only render these new items)
   const toRender = batch ?? products;
   const startIdx = batch ? (products.length - batch.length) : 0;
 
@@ -408,7 +403,6 @@ function renderProds(batch = null) {
     const c2        = p.color_secondary|| '#f8bbd0';
     const emoji     = p.emoji          || '👶';
     const catLabel  = (p.category_slug || p.category_name || '').toUpperCase();
-    const sizeRange = ''; // size shown in detail page only
     const hasImage  = p.image_url && p.image_url.trim() !== '';
 
     const isOutOfStock = !p.stock || p.stock <= 0;
@@ -422,17 +416,27 @@ function renderProds(batch = null) {
     const imgBox = document.createElement('div');
     imgBox.className = 'p-img-box';
 
+    // Parse images upfront so color swap can use them
+    let cardImageList = [];
+    try { if (p.image_urls) cardImageList = JSON.parse(p.image_urls); } catch {}
+    if (!cardImageList.length && p.image_url && p.image_url.trim()) cardImageList = [p.image_url];
+    cardImageList = cardImageList.map(resolveImg).filter(Boolean);
+
+    let cardMainImg = null;
+
     if (hasImage) {
       const img = document.createElement('img');
       img.src     = resolveImg(p.image_url);
       img.alt     = p.name;
       img.className = 'p-img';
+      img.id      = `card-img-${p.id}`;
       img.loading = 'lazy';
-      img.onerror = () => { img.style.display = 'none'; svg.style.display = 'block'; };
+      img.onerror = () => { img.style.display = 'none'; fallbackSvg.style.display = 'block'; };
       imgBox.appendChild(img);
-      const svg = buildEmojiSVG(c1, c2, emoji, catLabel, `gf${i}`);
-      svg.style.display = 'none';
-      imgBox.appendChild(svg);
+      cardMainImg = img;
+      const fallbackSvg = buildEmojiSVG(c1, c2, emoji, catLabel, `gf${i}`);
+      fallbackSvg.style.display = 'none';
+      imgBox.appendChild(fallbackSvg);
     } else {
       imgBox.appendChild(buildEmojiSVG(c1, c2, emoji, catLabel, `g${i}`));
     }
@@ -445,7 +449,7 @@ function renderProds(batch = null) {
       imgBox.appendChild(oos);
     }
 
-    // Badge (New / Sale / Bestseller)
+    // Badge
     if (p.badge) {
       const badge = document.createElement('div');
       badge.className = `p-badge ${p.badge}`;
@@ -454,7 +458,7 @@ function renderProds(batch = null) {
       imgBox.appendChild(badge);
     }
 
-    // Heart — always top-right of card, outside imgBox to avoid overflow:hidden
+    // Heart
     const wishBtn = document.createElement('button');
     wishBtn.className = `p-wish-float${isWished ? ' wished' : ''}`;
     wishBtn.id = `wish-${p.id}`;
@@ -462,7 +466,7 @@ function renderProds(batch = null) {
     wishBtn.onclick = e => { e.stopPropagation(); toggleWish(p.id, p.name); };
     card.appendChild(wishBtn);
 
-    // Actions overlay — qty + add to cart only
+    // Actions overlay
     const acts = document.createElement('div');
     acts.className = 'p-acts';
     if (isOutOfStock) acts.style.display = 'none';
@@ -477,18 +481,22 @@ function renderProds(batch = null) {
     const qtyNum   = qtyWrap.querySelector('.p-qty-num');
 
     qtyMinus.onclick = e => { e.stopPropagation(); if (cardQty > 1) { cardQty--; qtyNum.textContent = cardQty; } };
-    qtyPlus.onclick  = e => { e.stopPropagation(); if (cardQty < 10) { cardQty++; qtyNum.textContent = cardQty; } };
+    qtyPlus.onclick  = e => {
+      e.stopPropagation();
+      // Cap qty at available stock for selected size (or total stock)
+      const maxQty = Math.min(getCardAvailableStock(), 10);
+      if (cardQty < maxQty) { cardQty++; qtyNum.textContent = cardQty; }
+    };
 
     const addBtn = document.createElement('button');
     addBtn.className = 'p-add';
     addBtn.textContent = 'Add to Cart';
-    addBtn.onclick = e => { e.stopPropagation(); openProduct(p.id); };
 
     acts.appendChild(qtyWrap);
     acts.appendChild(addBtn);
     imgBox.appendChild(acts);
 
-    // Sizes available — selectable
+    // Parse sizes and colors
     let selectedSize  = null;
     let selectedColor = null;
     let sizeStockMap  = {};
@@ -507,6 +515,14 @@ function renderProds(batch = null) {
     } catch {}
 
     const availableSizes = Object.entries(sizeStockMap).filter(([,qty]) => Number(qty) > 0).map(([s]) => s);
+
+    // Helper: get available stock based on selected size
+    function getCardAvailableStock() {
+      if (selectedSize && sizeStockMap[selectedSize] !== undefined) {
+        return Number(sizeStockMap[selectedSize]);
+      }
+      return p.stock || 0;
+    }
 
     let sizesHtml = '';
     if (availableSizes.length) {
@@ -548,40 +564,83 @@ function renderProds(batch = null) {
           selectedSize = size;
           info.querySelectorAll('.p-card-size').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
+
+          // FIX 1: Check size stock and update qty controls
+          const sizeStock = Number(sizeStockMap[size] || 0);
+          if (cardQty > sizeStock) {
+            cardQty = Math.max(1, sizeStock);
+            qtyNum.textContent = cardQty;
+          }
+          qtyPlus.style.opacity = sizeStock <= cardQty ? '.4' : '1';
         }
       });
     });
 
-    // Wire up color selection
+    // Wire up color selection — swap card image + block zero-stock colors
     info.querySelectorAll('.p-card-swatch[data-color]').forEach(sw => {
+      // Hide swatches with 0 stock entirely
+      const colorName = sw.dataset.color;
+      const colorObj  = colorOptions.find(c => (c.name || c) === colorName);
+      const colorStock = colorObj?.stock !== undefined ? Number(colorObj.stock) : null;
+      if (colorStock !== null && colorStock <= 0) {
+        sw.style.display = 'none';
+        return; // skip click wiring
+      }
+
       sw.addEventListener('pointerup', () => setTimeout(() => sw.blur(), 0));
       sw.addEventListener('click', e => {
         e.stopPropagation();
         sw.blur();
-        const color = sw.dataset.color;
-        if (selectedColor === color) {
+        if (selectedColor === colorName) {
           selectedColor = null;
           sw.classList.remove('active');
+          if (cardMainImg && cardImageList.length) {
+            cardMainImg.style.opacity = '0';
+            setTimeout(() => { cardMainImg.src = cardImageList[0]; cardMainImg.style.opacity = '1'; }, 120);
+          }
         } else {
-          selectedColor = color;
+          selectedColor = colorName;
           info.querySelectorAll('.p-card-swatch').forEach(s => { s.classList.remove('active'); s.blur(); });
           sw.classList.add('active');
+
+          const colorImgs = colorObj?.images ? colorObj.images.map(resolveImg).filter(Boolean) : [];
+          if (cardMainImg) {
+            const newSrc = colorImgs.length ? colorImgs[0] : (cardImageList[0] || null);
+            if (newSrc && newSrc !== cardMainImg.src) {
+              cardMainImg.style.transition = 'opacity .15s';
+              cardMainImg.style.opacity = '0';
+              setTimeout(() => { cardMainImg.src = newSrc; cardMainImg.style.opacity = '1'; }, 120);
+            }
+          }
         }
       });
     });
 
-    // Override add button to use selected size/color
+    // Override add button with stock check
     addBtn.onclick = e => {
       e.stopPropagation();
       if (p.stock <= 0) { showToast('Out of stock'); return; }
+
       if (availableSizes.length > 0 && !selectedSize) { showToast('Please select a size 🌸'); return; }
-      if (colorOptions.length > 0 && !selectedColor)  { showToast('Please select a color 🌸'); return; }
+      if (selectedSize) {
+        const sizeStock = Number(sizeStockMap[selectedSize] || 0);
+        if (sizeStock <= 0) { showToast(`Size ${selectedSize} is out of stock`); return; }
+        if (cardQty > sizeStock) { showToast(`Only ${sizeStock} left in size ${selectedSize}`); return; }
+      }
+
+      if (colorOptions.length > 0 && !selectedColor) { showToast('Please select a color 🌸'); return; }
+      if (selectedColor) {
+        const colorObj   = colorOptions.find(c => (c.name || c) === selectedColor);
+        const colorStock = colorObj?.stock !== undefined ? Number(colorObj.stock) : null;
+        if (colorStock !== null && colorStock <= 0) { showToast(`${selectedColor} is out of stock`); return; }
+        if (colorStock !== null && cardQty > colorStock) { showToast(`Only ${colorStock} left in ${selectedColor}`); return; }
+      }
+
       const sizePart  = selectedSize  ? ` (${selectedSize})` : '';
       const colorPart = selectedColor ? ` — ${selectedColor}` : '';
       const label = `${p.name}${sizePart}${colorPart}`;
       for (let i = 0; i < cardQty; i++) addToCartData(label, p.price);
       showToast(`${label} ×${cardQty} added to cart! 🌸`);
-      // Flash the button green briefly
       addBtn.style.background = '#27ae60';
       addBtn.textContent = 'Added!';
       setTimeout(() => { addBtn.style.background = ''; addBtn.textContent = 'Add to Cart'; }, 1500);
@@ -610,16 +669,14 @@ function buildEmojiSVG(c1, c2, emoji, catLabel, gradId) {
 }
 
 async function toggleWish(id, name) {
-  
   if (!currentUser) { showToast('Please sign in to save favourites 🌸'); openPage('page-signin'); return; }
 
   const btn   = document.getElementById(`wish-${id}`);
   const pdBtn = document.getElementById('pd-wish-btn');
 
   if (wishItems.has(String(id))) {
-    // Remove from wishlist
     try {
-      const res = await fetch(`${API_URL}/api/wishlist/${id}`, { method: 'DELETE', headers: {  } });
+      const res = await fetch(`${API_URL}/api/wishlist/${id}`, { method: 'DELETE', headers: {} });
       if (res.ok) {
         wishItems.delete(String(id));
         if (btn)   { btn.innerHTML = SVG.heart; btn.classList.remove('wished'); }
@@ -627,7 +684,6 @@ async function toggleWish(id, name) {
       } else { showToast('Could not remove from wishlist'); }
     } catch { showToast('Connection error'); }
   } else {
-    // Add to wishlist
     try {
       const res = await fetch(`${API_URL}/api/wishlist/`, {
         method: 'POST',
@@ -708,11 +764,8 @@ function quickSend(txt) {
   document.getElementById('mama-ai').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 async function doSend(msg) {
-  // If not signed in, show friendly prompt instead of 401 error
-  
   if (!currentUser) {
     appendChatMsg('ai', '💕 Please sign in to chat with Mama AI! Your conversations are private and personalized to you.');
-    // Add a sign-in button inside the chat
     const c   = document.getElementById('chat-msgs');
     const btn = document.createElement('button');
     btn.style.cssText = 'margin:.5rem auto;display:block;padding:.5rem 1.4rem;background:var(--wine);color:white;border:none;border-radius:3rem;cursor:pointer;font-family:\'DM Sans\',sans-serif;font-size:.78rem;font-weight:500';
@@ -735,7 +788,6 @@ async function doSend(msg) {
     });
     hideTyping();
     if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
       appendChatMsg('ai', `I ran into a small issue (${res.status}). Please try again!`);
     } else {
       const data  = await res.json();
@@ -751,21 +803,16 @@ async function doSend(msg) {
   document.getElementById('send-btn').disabled = false;
 }
 
-/* ── PAGE MODALS ─────────────────────────────────── */
-/* ── Global fetch interceptor — timeout + auto-logout on 401 ── */
+/* ── FETCH INTERCEPTOR ───────────────────────────── */
 const _origFetch = window.fetch;
-// Restore dev token from sessionStorage on page load (survives ngrok warning redirect)
 window._authToken = sessionStorage.getItem('lumea_dev_token') || null;
 window.fetch = async (...args) => {
-  // 10-second timeout — important for slow Lebanese internet
   const controller = new AbortController();
   const timeout    = setTimeout(() => controller.abort(), 10000);
 
-  // Inject abort signal unless caller already provided one
   let [resource, options = {}] = args;
   if (!options.signal) options = { ...options, signal: controller.signal };
 
-  // Add ngrok bypass header and credentials for cookies
   options.headers = { 'ngrok-skip-browser-warning': 'true', ...options.headers };
   options.credentials = options.credentials || 'include';
   if (window._authToken && !options.headers['Authorization']) {
@@ -801,22 +848,17 @@ function _forceSignOut(msg) {
   setTimeout(() => openPage('page-signin'), 800);
 }
 
-/* Validate token with server on every page load — catches deleted accounts instantly */
 async function validateSession() {
-  if (!currentUser) return; // skip if not logged in
+  if (!currentUser) return;
   try {
-    const res = await _origFetch(`${API_URL}/api/users/me`, {
-      credentials: 'include'
-    });
+    const res = await _origFetch(`${API_URL}/api/users/me`, { credentials: 'include' });
     if (res.status === 401 || res.status === 404) {
       _forceSignOut('Your account no longer exists. Please create a new one.');
     }
-  } catch {
-    // Network error — don't sign out, just let them continue
-  }
+  } catch {}
 }
 
-/* ── History-aware page modals (browser back/forward) ── */
+/* ── PAGE MODALS ─────────────────────────────────── */
 const ALL_PAGES = ['page-checkout','page-signin','page-register','page-account','page-product'];
 
 function openPage(id) {
@@ -843,11 +885,9 @@ function closeAllPages() {
   document.body.style.overflow = '';
 }
 
-// Back button — close the top-most open modal
 window.addEventListener('popstate', () => {
   const open = ALL_PAGES.filter(id => document.getElementById(id)?.classList.contains('open'));
   if (open.length) {
-    // Close topmost without pushing new history entry
     const el = document.getElementById(open[open.length - 1]);
     if (el) el.classList.remove('open');
     const anyOpen = ALL_PAGES.some(p => document.getElementById(p)?.classList.contains('open'));
@@ -894,14 +934,11 @@ function clearAuth() {
 }
 
 async function loadWishlistFromDB() {
-  
-  
   try {
-    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: {  } });
+    const res  = await fetch(`${API_URL}/api/wishlist/`, { headers: {} });
     if (!res.ok) return;
     const data = await res.json();
     wishItems  = new Set((data.data || []).map(w => String(w.product_id)));
-    // Refresh product card heart icons
     document.querySelectorAll('[id^="wish-"]').forEach(btn => {
       const pid = String(btn.id.replace('wish-', ''));
       if (wishItems.has(pid)) { btn.innerHTML = SVG.heartFilled; btn.classList.add('wished'); }
@@ -909,7 +946,7 @@ async function loadWishlistFromDB() {
     });
   } catch {}
 }
-/* Allowed real email providers — extend this list as needed */
+
 const ALLOWED_DOMAINS = new Set([
   'gmail.com','googlemail.com',
   'outlook.com','hotmail.com','hotmail.fr','hotmail.co.uk','live.com','live.fr','live.co.uk','msn.com',
@@ -996,7 +1033,6 @@ async function sendVerificationCode() {
     const data = await res.json();
     if (!res.ok) { showToast(data.detail || 'Could not send code. Try again.'); btn.textContent = 'Send Verification Code →'; btn.disabled = false; return; }
 
-    // Show step 2
     document.getElementById('reg-email-display').textContent = email;
     document.getElementById('reg-step-1').style.display = 'none';
     document.getElementById('reg-step-2').style.display = 'block';
@@ -1048,7 +1084,6 @@ async function doRegister() {
     updateAccountUI();
     await loadWishlistFromDB();
     closePage('page-register');
-    // Reset register form
     document.getElementById('reg-step-1').style.display = 'block';
     document.getElementById('reg-step-2').style.display = 'none';
     document.getElementById('reg-code').value = '';
@@ -1093,7 +1128,6 @@ function renderAccWishlist() {
       <div style="width:48px;height:48px;border-radius:.7rem;background:${p.color_primary || '#fce4ec'};display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">${p.emoji || '👶'}</div>
       <div style="flex:1">
         <div style="font-size:.88rem;font-weight:500;color:var(--text)">${p.name}</div>
-
       </div>
       <span style="font-size:.95rem;font-weight:500;color:var(--wine);margin-right:.5rem">$${parseFloat(p.price).toFixed(2)}</span>`;
     const addBtn = document.createElement('button');
@@ -1131,7 +1165,6 @@ function refreshOrderSummary() {
     const ico = document.createElement('div');
     ico.className = 'os-ico';
 
-    // Try image_urls first, then image_url
     let imgSrc = '';
     try { if (p?.image_urls) { const arr = JSON.parse(p.image_urls); if (arr.length) imgSrc = resolveImg(arr[0]); } } catch {}
     if (!imgSrc && p?.image_url) imgSrc = resolveImg(p.image_url);
@@ -1179,14 +1212,13 @@ async function loadCheckoutAddresses() {
   const oN  = document.getElementById('co-option-new');
   const div = document.getElementById('co-divider');
   const nl  = document.getElementById('co-new-addr-label');
-  
 
   if (!currentUser) {
     oS.style.display = 'none'; div.style.display = 'none'; nl.style.display = 'none'; oN.style.display = 'block';
     return;
   }
   try {
-    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: {  } });
+    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: {} });
     const data = await res.json();
     checkoutSavedAddresses = data.data || [];
   } catch { checkoutSavedAddresses = []; }
@@ -1287,15 +1319,12 @@ async function placeOrder() {
     delivery_method: 'standard',
     discount_code:   appliedDiscount?.code || null,
     items: cartItems.map(it => {
-      // Strip size + color suffixes: "Petal Smock Dress (3-6M) — Rose Pink" → "Petal Smock Dress"
       const baseName = it.name.replace(/\s*\(.*$/, '').replace(/\s*—.*$/, '').trim();
       const p = products.find(x => x.name === baseName || x.name === it.name);
-      if (!p) console.warn('No product match for:', it.name, '→ baseName:', baseName);
       return { product_id: p?.id, quantity: it.qty };
     }).filter(it => it.product_id)
   };
 
-  
   if (!currentUser) { showToast('Please sign in to place an order.'); if (confirmBtn) { confirmBtn.textContent = 'Confirm Order →'; confirmBtn.disabled = false; } return; }
 
   try {
@@ -1346,7 +1375,6 @@ async function applyDiscount() {
     if (msg) { msg.textContent = `✓ ${codeData.percentage}% discount applied!`; msg.style.color = '#27ae60'; }
     refreshOrderSummary();
   } catch (e) {
-    console.error('Discount error:', e);
     if (msg) { msg.textContent = 'Could not apply code. Try again.'; msg.style.color = '#e74c3c'; }
   }
 }
@@ -1369,7 +1397,6 @@ function resetCheckout() {
   const s3 = document.getElementById('step-3');
   if (s3) s3.querySelector('.step-num').textContent = '3';
   selectedSavedAddrId = null; checkoutSavedAddresses = [];
-  // Reset confirm button
   const confirmBtn = document.querySelector('#panel-shipping .pm-btn');
   if (confirmBtn) { confirmBtn.textContent = 'Confirm Order →'; confirmBtn.disabled = false; }
 }
@@ -1399,10 +1426,9 @@ function checkPwStrength(pw) {
 /* ── ADDRESSES ───────────────────────────────────── */
 async function renderAddrCards() {
   const wrap  = document.getElementById('addr-cards-wrap'); if (!wrap) return;
-  
   if (!currentUser) { wrap.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Please sign in to see your addresses.</div>'; return; }
   try {
-    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: {  } });
+    const res  = await fetch(`${API_URL}/api/addresses/`, { headers: {} });
     const data = await res.json();
     addresses  = data.data || [];
   } catch { showToast('Could not load addresses'); return; }
@@ -1475,7 +1501,6 @@ function openAddrForm(id) {
     document.getElementById('af-city').value     = a.city        || '';
     document.getElementById('af-state').value    = a.state       || '';
     document.getElementById('af-default').checked = !!a.is_default;
-    // Split apartment back into building / floor / apt parts
     const parts = (a.apartment || '').split(',').map(s => s.trim());
     document.getElementById('af-building').value = parts[0] || '';
     document.getElementById('af-floor').value    = parts[1] || '';
@@ -1499,7 +1524,6 @@ async function saveAddress() {
   if (!fname || !lname || !street || !city || !building || !floor) {
     showToast('Please fill in all required fields'); return;
   }
-  
   if (!currentUser) { showToast('Please sign in first'); return; }
   const body = {
     first_name:  fname,
@@ -1525,7 +1549,6 @@ async function saveAddress() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      // Handle FastAPI validation errors (detail can be array or string)
       if (Array.isArray(data.detail)) {
         showToast(data.detail.map(e => e.msg).join(', '));
       } else {
@@ -1538,14 +1561,11 @@ async function saveAddress() {
   } catch { showToast('Connection error. Please try again.'); }
 }
 async function setDefaultAddr(id) {
-  
   try {
-    await fetch(`${API_URL}/api/addresses/${id}/default`, { method: 'PATCH', headers: {  } });
-    // Update local addresses array
+    await fetch(`${API_URL}/api/addresses/${id}/default`, { method: 'PATCH', headers: {} });
     addresses.forEach(a => a.is_default = (a.id === id) ? 1 : 0);
     renderAddrCards();
     showToast('Default address updated!');
-    // Auto-fill checkout form with this address
     const a = addresses.find(x => x.id === id);
     if (a) {
       const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
@@ -1555,12 +1575,10 @@ async function setDefaultAddr(id) {
       set('co-street', a.street);
       set('co-city',   a.city);
     }
-  }
-  catch { showToast('Connection error'); }
+  } catch { showToast('Connection error'); }
 }
 async function deleteAddr(id) {
-  
-  try { await fetch(`${API_URL}/api/addresses/${id}`, { method: 'DELETE', headers: {  } }); renderAddrCards(); showToast('Address removed.'); }
+  try { await fetch(`${API_URL}/api/addresses/${id}`, { method: 'DELETE', headers: {} }); renderAddrCards(); showToast('Address removed.'); }
   catch { showToast('Connection error'); }
 }
 
@@ -1572,7 +1590,6 @@ async function doChangePassword() {
   if (!current || !newPw || !confirm) { showToast('Please fill in all password fields'); return; }
   if (newPw.length < 8)               { showToast('New password must be at least 8 characters'); return; }
   if (newPw !== confirm)              { showToast('New passwords do not match'); return; }
-  
   try {
     const res  = await fetch(`${API_URL}/api/users/me/password`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password: current, new_password: newPw }) });
     const data = await res.json();
@@ -1585,13 +1602,12 @@ async function doChangePassword() {
 /* ── ORDERS ──────────────────────────────────────── */
 async function loadOrders() {
   const el    = document.getElementById('orders-list'); if (!el) return;
-  
   if (!currentUser) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.88rem">Please sign in to see your orders.</div>'; return; }
 
   el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.88rem"><div class="spin-ring" style="width:30px;height:30px;border:3px solid var(--rose);border-top-color:var(--wine);border-radius:50%;margin:0 auto 1rem;animation:spin .8s linear infinite"></div>Loading orders...</div>';
 
   try {
-    const res    = await fetch(`${API_URL}/api/orders/?limit=20&offset=0`, { headers: {  } });
+    const res    = await fetch(`${API_URL}/api/orders/?limit=20&offset=0`, { headers: {} });
     const data   = await res.json();
     if (!res.ok) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Could not load orders.</div>'; return; }
     const orders = data.data || [];
@@ -1622,7 +1638,6 @@ async function doDeleteAccount() {
   const pw = document.getElementById('delete-confirm-pw').value;
   if (!pw) { showToast('Please enter your password to confirm'); return; }
   if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
-  
   try {
     const res  = await fetch(`${API_URL}/api/users/me`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
     const data = await res.json();
@@ -1660,7 +1675,6 @@ async function sendContactMessage() {
   if (!message) { showToast('Please write a message'); return; }
   const btn   = event.target;
   btn.textContent = 'Sending...'; btn.disabled = true;
-  
   try {
     const res = await fetch(`${API_URL}/api/contact/`, {
       method: 'POST',
@@ -1683,32 +1697,25 @@ function openProduct(productId) {
   const c2    = p.color_secondary || '#f8bbd0';
   const emoji = p.emoji           || '👶';
 
-  // ── Build image list from image_urls (JSON array) or fall back to image_url ──
   let imageList = [];
   try { if (p.image_urls) imageList = JSON.parse(p.image_urls); } catch {}
   if (!imageList.length && p.image_url && p.image_url.trim()) imageList = [p.image_url];
   imageList = imageList.map(resolveImg).filter(Boolean);
 
-  // ── Render image area ────────────────────────────────────────────────────────
   const imgBox = document.getElementById('pd-img-box');
   imgBox.innerHTML = '';
   imgBox.style.position = 'relative';
 
   if (!imageList.length) {
-    // No image — show emoji SVG
     imgBox.appendChild(buildEmojiSVG(c1, c2, emoji, '', 'pdg'));
-
   } else if (imageList.length === 1) {
-    // Single image
     const img = document.createElement('img');
     img.src   = imageList[0];
     img.alt   = p.name;
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block';
     img.onclick = () => openLightbox(imageList[0]);
     imgBox.appendChild(img);
-
   } else {
-    // Multiple images — carousel
     let current = 0;
 
     const img = document.createElement('img');
@@ -1718,7 +1725,6 @@ function openProduct(productId) {
     img.onclick = () => openLightbox(imageList[current]);
     imgBox.appendChild(img);
 
-    // Arrow helper
     const arrow = (side) => {
       const btn = document.createElement('button');
       btn.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);${side}:.7rem;z-index:10;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.15);transition:background .2s`;
@@ -1730,7 +1736,6 @@ function openProduct(productId) {
       return btn;
     };
 
-    // Dots
     const dotsWrap = document.createElement('div');
     dotsWrap.style.cssText = 'position:absolute;bottom:.7rem;left:50%;transform:translateX(-50%);display:flex;gap:.45rem;z-index:10';
     const dots = imageList.map((_, i) => {
@@ -1740,25 +1745,19 @@ function openProduct(productId) {
       return d;
     });
 
-    // Counter
     const counter = document.createElement('div');
     counter.style.cssText = 'position:absolute;top:.7rem;right:.7rem;z-index:10;background:rgba(46,26,34,.55);color:white;font-size:.68rem;font-family:\'DM Sans\',sans-serif;padding:.2rem .65rem;border-radius:3rem';
     counter.textContent = `1 / ${imageList.length}`;
     counter.dataset.counter = '1';
 
-    // Navigate function
     const goTo = (idx) => {
       current = (idx + imageList.length) % imageList.length;
       img.style.opacity = '0';
-      setTimeout(() => {
-        img.src = imageList[current];
-        img.style.opacity = '1';
-      }, 150);
+      setTimeout(() => { img.src = imageList[current]; img.style.opacity = '1'; }, 150);
       dots.forEach((d, i) => d.style.background = i === current ? 'white' : 'rgba(255,255,255,.45)');
       counter.textContent = `${current + 1} / ${imageList.length}`;
     };
 
-    // Dot clicks
     dots.forEach((d, i) => { d.dataset.dot = i; d.onclick = (e) => { e.stopPropagation(); goTo(i); }; });
 
     const prevBtn = arrow('left');
@@ -1781,8 +1780,6 @@ function openProduct(productId) {
   document.getElementById('pd-desc').textContent     = p.description || 'Premium organic baby clothing crafted with the softest materials for your little one.';
   document.getElementById('pd-breadcrumb-name').textContent = p.name;
 
-  // ── Stock status ─────────────────────────────────────────────────────────────
-  const stockEl  = document.getElementById('pd-stock');
   const stockRow = document.getElementById('pd-stock-row');
   const stockSvgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
   const stockSvgX     = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
@@ -1799,7 +1796,6 @@ function openProduct(productId) {
   if (p.compare_price) { oldEl.textContent = `$${parseFloat(p.compare_price).toFixed(2)}`; oldEl.style.display = 'inline'; }
   else oldEl.style.display = 'none';
 
-  // ── Size selector ────────────────────────────────────────────────────────────
   const existingSelectors = document.getElementById('pd-selectors');
   if (existingSelectors) existingSelectors.remove();
 
@@ -1807,7 +1803,6 @@ function openProduct(productId) {
   selectorsWrap.id = 'pd-selectors';
   selectorsWrap.style.cssText = 'margin:1rem 0';
 
-  // Full kids size chart
   const ALL_SIZES = [
     { label: '0-1M',   sub: '0–1 mo' },
     { label: '0-3M',   sub: 'Newborn' },
@@ -1825,25 +1820,21 @@ function openProduct(productId) {
     { label: '6Y',     sub: '6 years' },
   ];
 
-  // Parse size_range — can be JSON {"0-3M":10,"3-6M":5} or plain text
-  let sizeStockMap = null; // null = no per-size stock info
+  let sizeStockMap = null;
   let sizeList = ALL_SIZES;
 
   try {
     const parsed = JSON.parse(p.size_range);
     if (typeof parsed === 'object' && !Array.isArray(parsed)) {
       sizeStockMap = parsed;
-      // Only show sizes defined by admin, mark out-of-stock ones
       sizeList = ALL_SIZES.filter(s => parsed.hasOwnProperty(s.label));
     }
   } catch {
-    // Not JSON — strip display text and show all sizes
     sizeList = ALL_SIZES;
   }
 
   let selectedSize = null;
 
-  // Size header
   const sizeHeader = document.createElement('div');
   sizeHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem';
   sizeHeader.innerHTML = `
@@ -1887,10 +1878,11 @@ function openProduct(productId) {
   });
   selectorsWrap.appendChild(sizeBtns);
 
-  // ── Color selector ────────────────────────────────────────────────────────────
   let selectedColor = null;
   let colorOptions = [];
   try { if (p.available_colors) colorOptions = JSON.parse(p.available_colors); } catch {}
+  // Fix 1: Remove colors with 0 stock from display
+  colorOptions = colorOptions.filter(c => c.stock === undefined || Number(c.stock) > 0);
 
   if (colorOptions.length > 0) {
     const colorHeader = document.createElement('div');
@@ -1907,31 +1899,26 @@ function openProduct(productId) {
       const btn = document.createElement('button');
       btn.className = 'color-circle';
       btn.title = c.name;
-      // Use a wrapping div for the color so CSS can't override it
-      btn.style.cssText = `width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:all .15s;padding:0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25)`;
-      // Inner div holds the actual color — immune to button CSS overrides
+      btn.style.cssText = `width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:all .15s;padding:0;overflow:hidden;box-shadow:0 0 0 1.5px rgba(0,0,0,.15),0 2px 8px rgba(0,0,0,.2)`;
       const inner = document.createElement('div');
       inner.style.cssText = `width:100%;height:100%;background:${c.hex};border-radius:50%`;
       btn.appendChild(inner);
       btn.onclick = () => {
-        // Deselect all
         colorRow.querySelectorAll('button').forEach(b => {
           b.style.border = '3px solid transparent';
           b.style.transform = 'scale(1)';
         });
-        // Select this one
         btn.style.border = '3px solid var(--wine)';
         btn.style.transform = 'scale(1.15)';
         selectedColor = c.name;
         const hint = document.getElementById('pd-color-hint');
         if (hint) hint.textContent = `${c.name} ✓`;
 
-        // ── Swap images if this color has its own images ──
         const colorImgs = (c.images || []).map(resolveImg).filter(Boolean);
         if (colorImgs.length > 0) {
           swapProductImages(colorImgs);
         } else if (imageList.length > 0) {
-          swapProductImages(imageList); // revert to default images
+          swapProductImages(imageList);
         }
       };
       colorRow.appendChild(btn);
@@ -1939,7 +1926,6 @@ function openProduct(productId) {
     selectorsWrap.appendChild(colorRow);
   }
 
-  // ── Quantity picker ──────────────────────────────────────────────────────────
   let qty = 1;
   const qtyLabel = document.createElement('div');
   qtyLabel.style.cssText = 'font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem';
@@ -1973,7 +1959,6 @@ function openProduct(productId) {
   qtyWrap.appendChild(qtyPlus);
   selectorsWrap.appendChild(qtyWrap);
 
-  // Insert before pd-actions
   const pdActions = document.querySelector('.pd-actions');
   pdActions.parentNode.insertBefore(selectorsWrap, pdActions);
 
@@ -1982,7 +1967,6 @@ function openProduct(productId) {
   wb.classList.toggle('wished', isWished);
   wb.onclick = () => toggleWish(p.id, p.name);
 
-  // ── Clear selection button ────────────────────────────────────────────────────
   const existingClear = document.getElementById('pd-clear-btn');
   if (existingClear) existingClear.remove();
 
@@ -1992,7 +1976,6 @@ function openProduct(productId) {
     clearSelBtn.textContent = '✕ Clear selection';
     clearSelBtn.style.cssText = 'display:none;background:none;border:none;cursor:pointer;font-family:\'DM Sans\',sans-serif;font-size:.72rem;color:var(--muted);text-decoration:underline;padding:0;margin-bottom:.8rem';
     clearSelBtn.onclick = () => {
-      // Clear size
       selectedSize = null;
       selectorsWrap.querySelectorAll('button.size-selected').forEach(b => {
         b.classList.remove('size-selected');
@@ -2004,7 +1987,6 @@ function openProduct(productId) {
       const sizeHint = document.getElementById('pd-size-hint');
       if (sizeHint) sizeHint.textContent = '';
 
-      // Clear color
       selectedColor = null;
       selectorsWrap.querySelectorAll('button.color-circle').forEach(b => {
         b.style.border = '3px solid transparent';
@@ -2014,19 +1996,15 @@ function openProduct(productId) {
       if (colorHint) colorHint.textContent = '';
 
       clearSelBtn.style.display = 'none';
-
-      // Revert to default images
       if (imageList.length > 0) swapProductImages(imageList);
     };
 
-    // Show clear button whenever a size or color is selected
-    const origSizeClick = selectorsWrap.onclick;
     selectorsWrap.addEventListener('click', () => {
       if (selectedSize || selectedColor) clearSelBtn.style.display = 'inline-block';
     });
 
-    const pdActions = document.querySelector('.pd-actions');
-    pdActions.parentNode.insertBefore(clearSelBtn, pdActions);
+    const pdActionsRef = document.querySelector('.pd-actions');
+    pdActionsRef.parentNode.insertBefore(clearSelBtn, pdActionsRef);
   }
 
   const addBtn = document.getElementById('pd-add-btn');
@@ -2035,7 +2013,6 @@ function openProduct(productId) {
   addBtn.style.cursor     = p.stock <= 0 ? 'not-allowed' : '';
   addBtn.disabled         = p.stock <= 0;
 
-  // Disable qty controls if out of stock
   if (p.stock <= 0) {
     qtyMinus.disabled = true; qtyMinus.style.opacity = '.4';
     qtyPlus.disabled  = true; qtyPlus.style.opacity  = '.4';
@@ -2048,6 +2025,13 @@ function openProduct(productId) {
     if (p.stock <= 0) return;
     if (sizeList.length > 0 && !selectedSize) { showToast('Please select a size first 🌸'); return; }
     if (colorOptions.length > 0 && !selectedColor) { showToast('Please select a color first 🌸'); return; }
+    // Check color-specific stock
+    if (selectedColor) {
+      const colorObj   = colorOptions.find(c => c.name === selectedColor);
+      const colorStock = colorObj?.stock !== undefined ? Number(colorObj.stock) : null;
+      if (colorStock !== null && colorStock <= 0) { showToast(`${selectedColor} is out of stock`); return; }
+      if (colorStock !== null && qty > colorStock)  { showToast(`Only ${colorStock} left in ${selectedColor}`); return; }
+    }
     const sizePart  = selectedSize  ? ` (${selectedSize})` : '';
     const colorPart = selectedColor ? ` — ${selectedColor}` : '';
     const label = `${p.name}${sizePart}${colorPart}`;
@@ -2060,29 +2044,24 @@ function openProduct(productId) {
   openPage('page-product');
 }
 
-// Swaps the product image carousel with a new set of images
 function swapProductImages(newImages) {
   const imgBox = document.getElementById('pd-img-box');
   if (!imgBox || !newImages.length) return;
 
-  // Find the main img element
   const img = imgBox.querySelector('img');
   if (img) {
     img.src = newImages[0];
     img.onclick = () => openLightbox(newImages[0]);
   }
 
-  // Update dots
   const dots = imgBox.querySelectorAll('[data-dot]');
   dots.forEach((dot, i) => {
     dot.style.background = i === 0 ? 'white' : 'rgba(255,255,255,.45)';
   });
 
-  // Update counter
   const counter = imgBox.querySelector('[data-counter]');
   if (counter) counter.textContent = `1 / ${newImages.length}`;
 
-  // Rebuild arrow navigation for new images
   let currentIdx = 0;
   const leftBtn  = imgBox.querySelector('[data-arrow="left"]');
   const rightBtn = imgBox.querySelector('[data-arrow="right"]');
@@ -2115,14 +2094,12 @@ function closeLightbox() {
 
 /* ── EVENT LISTENERS & INIT ──────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
-  // Smooth scroll only for anchor links — not global (global smooth scroll causes filter jump)
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
       const target = document.querySelector(a.getAttribute('href'));
       if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     });
   });
-  // Set eye icons on password inputs
   document.querySelectorAll('.eye-btn').forEach(b => b.innerHTML = SVG.eye);
 
   document.getElementById('cart-btn').addEventListener('click', openCart);
@@ -2132,11 +2109,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (currentUser) { openPage('page-account'); loadOrders(); }
     else openPage('page-signin');
   });
-  // Password strength checker
   const regPass = document.getElementById('reg-pass');
   if (regPass) regPass.addEventListener('input', () => checkPwStrength(regPass.value));
 
-  // Verification code — numbers only
   const regCode = document.getElementById('reg-code');
   if (regCode) regCode.addEventListener('input', () => { regCode.value = regCode.value.replace(/[^0-9]/g, ''); });
   document.getElementById('chat-inp').addEventListener('keydown', e => {
@@ -2146,7 +2121,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') { closeAllPages(); }
   });
 
-  // ── Dark mode toggle ─────────────────────────────────────────────────────────
   const themeBtn = document.getElementById('theme-btn');
   const moonIcon = document.getElementById('theme-icon-moon');
   const sunIcon  = document.getElementById('theme-icon-sun');
@@ -2158,7 +2132,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const savedTheme = sessionStorage.getItem('lumea_theme');
-  // Always default to light — only go dark if user explicitly chose dark this session
   const isDarkMode = savedTheme === 'dark';
   applyTheme(isDarkMode);
 
@@ -2169,8 +2142,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     sessionStorage.setItem('lumea_theme', isDark ? 'dark' : 'light');
   });
 
-  // ── HORIZONTAL FILTER ────────────────────────────────────────────────────────
-
   const fcState = { type:'all', age:'all', gender:'all', season:'all', size:'all', badge:'all' };
   let filterDebounce;
 
@@ -2179,9 +2150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const group = btn.dataset.group;
       const val   = btn.dataset.val;
       fcState[group] = val;
-      // Update active state
       document.querySelectorAll(`.fc[data-group="${group}"]`).forEach(b => b.classList.toggle('active', b.dataset.val === val));
-      // Debounce reload
       clearTimeout(filterDebounce);
       filterDebounce = setTimeout(() => runFilteredLoad(false), 200);
     });
@@ -2230,7 +2199,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.textContent = hidden ? 'Show ▼' : 'Hide ▲';
   };
 
-  // Filters closed by default
   const filtersBody = document.getElementById('filters-body');
   const filtersBtn  = document.getElementById('fc-toggle-btn');
   if (filtersBody) filtersBody.classList.add('hidden');
@@ -2274,7 +2242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       totalProducts = data.pagination?.total ?? data.data.length;
       let newBatch  = data.data;
 
-      // Client-side size filter
       if (fcState.size !== 'all') {
         const aliases = { '2Y':'18-24M','18-24M':'2Y','3Y':'24-36M','24-36M':'3Y' };
         const target = new Set([fcState.size, aliases[fcState.size]].filter(Boolean));
@@ -2289,13 +2256,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (append) { products = [...products, ...newBatch]; renderProds(newBatch); }
       else { products = newBatch; grid.innerHTML = ''; renderProds(null); }
 
-      // Fade in smoothly
       requestAnimationFrame(() => {
         grid.style.opacity = '1';
         grid.style.pointerEvents = '';
       });
 
-      // Refresh wish hearts after render
       document.querySelectorAll('[id^="wish-"]').forEach(btn => {
         const pid = String(btn.id.replace('wish-', ''));
         if (wishItems.has(pid)) { btn.innerHTML = SVG.heartFilled; btn.classList.add('wished'); }
@@ -2316,7 +2281,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('load-btn').addEventListener('click', () => runFilteredLoad(true));
 
-  // Init — run auth and products in parallel, don't block products on auth
   Promise.all([
     initAuth(),
     runFilteredLoad(false),
