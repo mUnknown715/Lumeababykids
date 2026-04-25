@@ -3,8 +3,8 @@
    All UI logic, no inline HTML strings
    ═══════════════════════════════════════════════ */
 
-// const API_URL = 'https://bilgy-stomatological-ryleigh.ngrok-free.dev';
-const API_URL='http://localhost:4000';
+const API_URL = 'https://bilgy-stomatological-ryleigh.ngrok-free.dev';
+// const API_URL='http://localhost:4000';
 
 /* Ensure uploaded images always get the full backend URL */
 function resolveImg(url) {
