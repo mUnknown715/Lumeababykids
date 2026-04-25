@@ -35,21 +35,24 @@ document.addEventListener('DOMContentLoaded', () => {
 let productColors = []; // [{name, hex, images:[url,...]}]
 
 function addColorSwatch() {
-  const hex  = document.getElementById('pf-color-pick').value;
-  const name = document.getElementById('pf-color-name').value.trim();
+  const hex   = document.getElementById('pf-color-pick').value;
+  const name  = document.getElementById('pf-color-name').value.trim();
+  const stock = parseInt(document.getElementById('pf-color-stock').value) || 0;
   if (!name) { toast('Please enter a color name'); return; }
   if (productColors.find(c => c.name.toLowerCase() === name.toLowerCase())) { toast('Color already added'); return; }
-  productColors.push({ name, hex, images: [] });
+  productColors.push({ name, hex, stock, images: [] });
   renderColorSwatches();
-  document.getElementById('pf-color-name').value = '';
+  document.getElementById('pf-color-name').value  = '';
+  document.getElementById('pf-color-stock').value = '';
 }
 
 function renderColorSwatches() {
   const list = document.getElementById('pf-colors-list');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:.5rem;margin-bottom:.7rem;width:100%';
   list.innerHTML = '';
   productColors.forEach((c, i) => {
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'background:var(--blush);border-radius:1rem;padding:.8rem 1rem;border:1.5px solid var(--rose);margin-bottom:.5rem;width:100%';
+    wrap.style.cssText = 'background:var(--blush);border-radius:1rem;padding:.8rem 1rem;border:1.5px solid var(--rose);width:100%';
 
     // Image previews for this color
     const imgPreviews = c.images.map((url, j) => `
@@ -62,6 +65,11 @@ function renderColorSwatches() {
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem">
         <div style="width:24px;height:24px;border-radius:50%;background:${c.hex};border:2px solid rgba(0,0,0,.1);flex-shrink:0"></div>
         <span style="font-size:.82rem;font-weight:500;color:var(--text);flex:1">${c.name}</span>
+        <div style="display:flex;align-items:center;gap:.3rem">
+          <label style="font-size:.7rem;color:var(--muted)">Stock:</label>
+          <input type="number" min="0" value="${c.stock ?? 0}" onchange="updateColorStock(${i}, this.value)"
+            style="width:60px;padding:.25rem .4rem;border:1.5px solid var(--rose);border-radius:.5rem;font-family:'DM Sans',sans-serif;font-size:.78rem;text-align:center;background:white;color:var(--text)"/>
+        </div>
         <button onclick="removeColor(${i})" style="background:none;border:none;cursor:pointer;color:#e74c3c;font-size:.8rem;padding:0">Remove</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center" id="color-imgs-${i}">
@@ -74,6 +82,13 @@ function renderColorSwatches() {
     list.appendChild(wrap);
   });
   document.getElementById('pf-colors').value = productColors.length ? JSON.stringify(productColors) : '';
+
+  // Refresh summary
+  let sizeTotal = 0;
+  document.querySelectorAll('.size-qty').forEach(inp => {
+    if (!inp.disabled) sizeTotal += parseInt(inp.value) || 0;
+  });
+  renderColorStockSummary(sizeTotal);
 }
 
 function removeColor(i) {
@@ -84,6 +99,53 @@ function removeColor(i) {
 function removeColorImage(colorIdx, imgIdx) {
   productColors[colorIdx].images.splice(imgIdx, 1);
   renderColorSwatches();
+}
+
+function updateColorStock(colorIdx, value) {
+  const newStock = parseInt(value) || 0;
+
+  // Calculate total stock from sizes
+  let sizeTotal = 0;
+  document.querySelectorAll('.size-qty').forEach(inp => {
+    if (!inp.disabled) sizeTotal += parseInt(inp.value) || 0;
+  });
+
+  // Calculate what other colors are using
+  const otherColorsTotal = productColors.reduce((sum, c, i) => {
+    return i === colorIdx ? sum : sum + (parseInt(c.stock) || 0);
+  }, 0);
+
+  const maxAllowed = sizeTotal - otherColorsTotal;
+
+  if (newStock > maxAllowed) {
+    toast(`Color stock cannot exceed remaining stock (${maxAllowed} left after other colors)`);
+    // Reset input to max allowed
+    const inputs = document.querySelectorAll(`[onchange*="updateColorStock(${colorIdx}"]`);
+    document.querySelectorAll('[onchange]').forEach(inp => {
+      if (inp.getAttribute('onchange') === `updateColorStock(${colorIdx}, this.value)`) {
+        inp.value = maxAllowed;
+      }
+    });
+    productColors[colorIdx].stock = maxAllowed;
+  } else {
+    productColors[colorIdx].stock = newStock;
+  }
+
+  document.getElementById('pf-colors').value = productColors.length ? JSON.stringify(productColors) : '';
+  renderColorStockSummary(sizeTotal);
+}
+
+function renderColorStockSummary(sizeTotal) {
+  const el = document.getElementById('color-stock-summary');
+  if (!el) return;
+  const colorTotal = productColors.reduce((sum, c) => sum + (parseInt(c.stock) || 0), 0);
+  const remaining  = sizeTotal - colorTotal;
+  el.innerHTML = `
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.75rem;margin-top:.4rem">
+      <span style="color:var(--muted)">Size total: <strong style="color:var(--text)">${sizeTotal}</strong></span>
+      <span style="color:var(--muted)">Colors total: <strong style="color:${colorTotal > sizeTotal ? '#e74c3c' : 'var(--wine)'}">${colorTotal}</strong></span>
+      <span style="color:var(--muted)">Unassigned: <strong style="color:${remaining < 0 ? '#e74c3c' : '#27ae60'}">${remaining}</strong></span>
+    </div>`;
 }
 
 async function uploadColorImages(colorIdx, input) {
@@ -168,6 +230,7 @@ function updateStockTotal() {
   if (el) el.textContent = total;
   const stockEl = document.getElementById('pf-stock');
   if (stockEl) stockEl.value = total;
+  renderColorStockSummary(total);
 }
 
 function readSizeData() {
