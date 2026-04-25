@@ -1,4 +1,6 @@
-const API = 'http://localhost:4000';
+// const API = 'http://localhost:4000';
+const API = 'https://bilgy-stomatological-ryleigh.ngrok-free.dev';
+
 
 function authHeader() {
   const token = localStorage.getItem('lumea_admin_token');
