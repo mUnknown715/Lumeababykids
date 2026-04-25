@@ -557,6 +557,9 @@
     body.dark .p-price { color: #e096a8; }
     body.dark .p-card-size { border-color: #4a2535; color: #9a6878; }
     body.dark .p-card-size-more { background: #2e1a22; border-color: #2e1a22; color: #9a6878; }
+    body.dark .p-card-swatch { border-color: rgba(255,255,255,.25) !important; box-shadow: 0 0 0 1px rgba(255,255,255,.15) !important; }
+    body.dark .p-card-swatch.active { border-color: var(--wine) !important; box-shadow: 0 0 0 2px rgba(255,255,255,.3) inset !important; }
+    body.dark .color-circle { box-shadow: 0 0 0 1.5px rgba(255,255,255,.3), 0 2px 8px rgba(0,0,0,.4) !important; }
     body.dark .auth-card, body.dark .chat-win, body.dark .order-summary { background: #1e1118; }
     body.dark .fm-input { background: #2a1520; color: var(--text); border-color: var(--rose); }
     body.dark .fm-input::placeholder { color: var(--muted); }
@@ -681,11 +684,67 @@
     body.dark .pd-add-btn { background: #8b3352 !important; color: white !important; }
     body.dark .pd-add-btn:hover { background: #c55a78 !important; }
     body.dark .pd-wish-btn { background: #1e1118 !important; border-color: #4a2535 !important; }
+    /* ── Dark Mode fixes ── */
     /* Color circle buttons — never override their background */
     .color-circle { outline: none; }
     #pd-selectors button.color-circle { min-width: unset !important; padding: 0 !important; }
-    body.dark #pd-selectors button.color-circle,
-    body.dark #pd-selectors button.color-circle:hover,
-    body.dark #pd-selectors button.color-circle:not(.size-selected) { background: attr(style) !important; border-color: transparent !important; }
+    /* Fix dark mode overriding color circle background */
+    body.dark #pd-selectors button.color-circle { background: transparent !important; border-color: transparent !important; }
+
+    /* Fix: overlay panels (cart, wishlist, search) dark mode */
+    body.dark [style*="background:var(--warm)"] { background: #1e1118 !important; }
+    body.dark [style*="background: var(--warm)"] { background: #1e1118 !important; }
+    body.dark [style*="color:var(--text)"] { color: #f5e6ec !important; }
+    body.dark [style*="color:var(--muted)"] { color: #c9a4b4 !important; }
+    body.dark [style*="color:var(--wine)"] { color: #e096a8 !important; }
+    body.dark [style*="border-bottom:1px solid var(--blush)"] { border-color: #2e1a22 !important; }
+
+    /* Fix: product detail page dark background */
+    body.dark .pd-grid { background: #150b10; }
+    body.dark .pd-meta { background: #1e1118; }
+    body.dark .pd-name { color: #f5e6ec; }
+    body.dark .pd-desc { color: #c9a4b4; }
+    body.dark #pd-stock-row { color: #c9a4b4; }
+    body.dark #pd-clear-btn { color: #c9a4b4 !important; }
+
+    /* Fix: tablet product cards missing action bar */
+    @media(max-width:1024px) and (min-width:641px) {
+      .p-acts { opacity: 1; transform: translateY(0); }
+      .p-card-swatch { width: 14px; height: 14px; }
+    }
+
+    /* Fix: mobile overlay panels too narrow */
+    @media(max-width:640px) {
+      #lumea-overlay { padding-right: .75rem; padding-left: .75rem; justify-content: center; }
+      #lumea-overlay > div { width: 100% !important; max-width: 100% !important; }
+    }
+
+    /* Fix: checkout on tablet */
+    @media(max-width:900px) {
+      .checkout-grid { grid-template-columns: 1fr !important; }
+      .checkout-right { position: static !important; }
+    }
+
+    /* Fix: auth card on small phones */
+    @media(max-width:380px) {
+      .auth-card { padding: 1.4rem 1rem; border-radius: 1rem; }
+      .auth-title { font-size: 1.5rem; }
+      .pm-title { font-size: 1.7rem; }
+      .pd-name { font-size: 1.4rem; }
+      .pd-price { font-size: 1.4rem; }
+    }
+
+    /* Fix: account page tabs wrapping badly on small phones */
+    @media(max-width:400px) {
+      .acc-menu { gap: .2rem; }
+      .acc-menu-item { font-size: .6rem; padding: .35rem .45rem; }
+    }
+
+    /* Fix: product detail image too short on tablet */
+    @media(max-width:768px) {
+      .pd-img-main { height: 320px; aspect-ratio: unset; }
+      .pd-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    }
+
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin-ring{border-radius:50%;animation:spin .8s linear infinite}
