@@ -236,9 +236,11 @@
       <div class="fm-group fm-full">
         <label>Available Colors <span style="font-size:.65rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">— add the colors this product comes in</span></label>
         <div id="pf-colors-list" style="display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:.7rem"></div>
+        <div id="color-stock-summary"></div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
           <input type="color" id="pf-color-pick" value="#f3bfca" style="height:36px;width:48px;padding:.2rem;border-radius:.5rem;border:1.5px solid var(--rose);cursor:pointer"/>
           <input type="text" id="pf-color-name" placeholder="Color name (e.g. Rose Pink)" style="padding:.4rem .8rem;border:1.5px solid var(--rose);border-radius:.6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;flex:1;min-width:140px"/>
+          <input type="number" id="pf-color-stock" placeholder="Stock" min="0" style="padding:.4rem .6rem;border:1.5px solid var(--rose);border-radius:.6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;width:70px;text-align:center"/>
           <button type="button" onclick="addColorSwatch()" style="padding:.4rem 1rem;background:var(--wine);color:white;border:none;border-radius:.6rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;white-space:nowrap">+ Add</button>
         </div>
         <input type="hidden" id="pf-colors" value=""/>
